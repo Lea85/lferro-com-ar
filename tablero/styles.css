@@ -337,6 +337,18 @@ code, .mono { font-family: var(--mono); }
   margin-bottom: 12px;
   padding: 0 4px;
 }
+.column-head .col-drag {
+  cursor: grab;
+  color: var(--slate-400);
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  user-select: none;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+.column-head .col-drag:hover { background: var(--card); color: var(--cyan-400); }
+.column-head .col-drag:active { cursor: grabbing; }
 .column-head .name {
   font-weight: 600;
   font-size: 13px;

@@ -10,8 +10,44 @@ const state = {
   tasks: [],
   search: '',
   sortables: [],
-  realtimeChan: null
+  realtimeChan: null,
+  dragInProgress: false,
+  refreshTimer: null,
+  lastDataHash: '',
+  isLoading: false
 };
+
+// Debounce de refresh por eventos realtime: agrupa multiples cambios
+// en una sola query, evita interrupciones de drags y re-renders innecesarios.
+function scheduleRefresh(reason) {
+  if (state.dragInProgress) return;
+  if (state.refreshTimer) clearTimeout(state.refreshTimer);
+  state.refreshTimer = setTimeout(async () => {
+    if (state.dragInProgress || state.isLoading) return;
+    if (!state.currentProjectId) return;
+    try {
+      state.isLoading = true;
+      const [cols, tasks] = await Promise.all([
+        API.listColumns(state.currentProjectId),
+        API.listTasks(state.currentProjectId)
+      ]);
+      const newHash = JSON.stringify({
+        cols: cols.map(c => [c.id, c.name, c.position]),
+        tasks: tasks.map(t => [t.id, t.column_id, t.position, t.title, t.priority, t.due_date, JSON.stringify(t.labels || [])])
+      });
+      if (newHash !== state.lastDataHash) {
+        state.columns = cols;
+        state.tasks = tasks;
+        state.lastDataHash = newHash;
+        renderBoard();
+      }
+    } catch (e) {
+      console.warn('Refresh fallo', reason, e);
+    } finally {
+      state.isLoading = false;
+    }
+  }, 500);
+}
 
 // ---------- Bootstrap ----------
 (async function bootstrap() {
@@ -163,7 +199,11 @@ function renderSidebar() {
 }
 
 async function selectProject(projectId) {
+  // Cancelar refrescos pendientes del proyecto anterior
+  if (state.refreshTimer) { clearTimeout(state.refreshTimer); state.refreshTimer = null; }
+  if (state.activityTimer) { clearTimeout(state.activityTimer); state.activityTimer = null; }
   state.currentProjectId = projectId;
+  state.lastDataHash = '';
   renderSidebar();
 
   const proj = state.projects.find(p => p.id === projectId);
@@ -174,34 +214,49 @@ async function selectProject(projectId) {
   document.getElementById('board-root').innerHTML = `<div class="loading">Cargando tablero…</div>`;
 
   try {
+    state.isLoading = true;
     [state.columns, state.tasks] = await Promise.all([
       API.listColumns(projectId),
       API.listTasks(projectId)
     ]);
+    state.lastDataHash = JSON.stringify({
+      cols: state.columns.map(c => [c.id, c.name, c.position]),
+      tasks: state.tasks.map(t => [t.id, t.column_id, t.position, t.title, t.priority, t.due_date, JSON.stringify(t.labels || [])])
+    });
     renderBoard();
     loadActivity();
     setupRealtime(projectId);
   } catch (err) {
     document.getElementById('board-root').innerHTML =
       `<div class="empty-state"><div class="e-emoji">⚠️</div>${escapeHtml(err.message)}</div>`;
+  } finally {
+    state.isLoading = false;
   }
 }
 
 function setupRealtime(projectId) {
   if (state.realtimeChan) {
-    sb.removeChannel(state.realtimeChan);
+    try { sb.removeChannel(state.realtimeChan); } catch {}
     state.realtimeChan = null;
   }
-  state.realtimeChan = sb.channel('tablero-' + projectId)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
-      // Refrescar solo tasks
-      API.listTasks(projectId).then(t => { state.tasks = t; renderBoard(); });
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'columns', filter: `project_id=eq.${projectId}` }, () => {
-      API.listColumns(projectId).then(c => { state.columns = c; renderBoard(); });
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log', filter: `project_id=eq.${projectId}` }, loadActivity)
-    .subscribe();
+  try {
+    state.realtimeChan = sb.channel('tablero-' + projectId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
+        // Filtramos client-side: solo si la task pertenece a una columna del proyecto actual
+        const colId = payload?.new?.column_id || payload?.old?.column_id;
+        if (colId && !state.columns.some(c => c.id === colId)) return;
+        scheduleRefresh('tasks');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'columns', filter: `project_id=eq.${projectId}` }, () => scheduleRefresh('columns'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity_log', filter: `project_id=eq.${projectId}` }, () => {
+        // Activity con su propio debounce simple
+        if (state.activityTimer) clearTimeout(state.activityTimer);
+        state.activityTimer = setTimeout(loadActivity, 600);
+      })
+      .subscribe();
+  } catch (e) {
+    console.warn('Realtime no disponible:', e);
+  }
 }
 
 // ---------- Board (Kanban) ----------
@@ -250,6 +305,7 @@ function columnHtml(col, tasks) {
   return `
     <div class="column" data-col-id="${col.id}">
       <div class="column-head">
+        <span class="col-drag" title="Arrastrar para reordenar">⋮⋮</span>
         <span class="name" contenteditable="true" data-col-id="${col.id}">${escapeHtml(col.name)}</span>
         <span class="count">${tasks.length}</span>
         <button class="btn-icon btn-sm" data-action="del-col" data-col-id="${col.id}" title="Eliminar columna">🗑</button>
@@ -292,7 +348,7 @@ function taskHtml(t) {
 }
 
 function initSortables() {
-  state.sortables.forEach(s => s.destroy());
+  state.sortables.forEach(s => { try { s.destroy(); } catch {} });
   state.sortables = [];
 
   // Sortable de tasks (entre columnas)
@@ -302,20 +358,27 @@ function initSortables() {
       animation: 150,
       ghostClass: 'ghost',
       dragClass: 'dragging',
-      onEnd: handleTaskMove
+      onStart: () => { state.dragInProgress = true; },
+      onEnd: (evt) => {
+        state.dragInProgress = false;
+        handleTaskMove(evt);
+      }
     });
     state.sortables.push(s);
   });
 
-  // Sortable de columnas
+  // Sortable de columnas (handle dedicado para no chocar con contenteditable)
   const board = document.getElementById('board');
   if (board) {
     const s = Sortable.create(board, {
       animation: 200,
-      handle: '.column-head .name',
-      filter: '.add-column, .add-task, .btn-icon, [contenteditable]',
-      preventOnFilter: false,
-      onEnd: handleColumnMove
+      handle: '.col-drag',
+      draggable: '.column',
+      onStart: () => { state.dragInProgress = true; },
+      onEnd: (evt) => {
+        state.dragInProgress = false;
+        handleColumnMove(evt);
+      }
     });
     state.sortables.push(s);
   }
