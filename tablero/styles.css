@@ -822,9 +822,10 @@ code, .mono { font-family: var(--mono); }
   border-radius: 8px;
   font-size: 13px;
 }
-.user-row .name { flex: 1; font-weight: 500; }
-.user-row .role { font-family: var(--mono); font-size: 11px; color: var(--slate-400); padding: 2px 8px; background: var(--card); border-radius: 999px; }
+.user-row .name { flex: 1; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-row .role { font-family: var(--mono); font-size: 11px; color: var(--slate-400); padding: 2px 8px; background: var(--card); border-radius: 999px; flex-shrink: 0; }
 .user-row.admin .role { color: var(--cyan-300); border: 1px solid var(--cyan-600); }
+.user-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 
 /* ===== Toast ===== */
 .toast {

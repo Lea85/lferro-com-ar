@@ -168,7 +168,14 @@ function setupSidebar() {
 
   document.getElementById('sb-add-project').addEventListener('click', openCreateProjectModal);
   document.getElementById('sb-logout').addEventListener('click', async () => {
-    await Auth.signOut();
+    if (!confirm('¿Cerrar sesión?')) return;
+    try { await Auth.signOut(); } catch (e) { console.warn('signOut fallo:', e); }
+    // Limpiar storage y forzar reload (no depender del listener onChange)
+    try {
+      localStorage.removeItem('tablero-auth');
+      Object.keys(localStorage).filter(k => k.startsWith('sb-') && k.includes('auth-token')).forEach(k => localStorage.removeItem(k));
+    } catch {}
+    location.href = '/tablero/';
   });
 }
 

@@ -129,9 +129,17 @@ function renderUsersCard() {
           <div class="user-row ${u.role === 'admin' ? 'admin' : ''}">
             <span class="name">@${escapeHtml(u.username)}</span>
             <span class="role">${u.role}</span>
-            <button class="btn btn-ghost btn-sm" data-action="toggle-role" data-uid="${u.id}" data-role="${u.role}">
-              ${u.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
-            </button>
+            <div class="user-actions">
+              <button class="btn btn-ghost btn-sm" data-action="toggle-role" data-uid="${u.id}" data-role="${u.role}" title="${u.role === 'admin' ? 'Quitar rol admin' : 'Promover a admin'}">
+                ${u.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+              </button>
+              <button class="btn btn-ghost btn-sm" data-action="reset-pass" data-uid="${u.id}" data-uname="${escapeHtml(u.username)}" title="Cambiar contraseña">
+                🔑 Password
+              </button>
+              <button class="btn btn-danger btn-sm" data-action="delete-user" data-uid="${u.id}" data-uname="${escapeHtml(u.username)}" title="Eliminar usuario">
+                🗑
+              </button>
+            </div>
           </div>
         `).join('')}
       </div>
@@ -248,5 +256,75 @@ function attachHandlers() {
         render();
       } catch (err) { toast(err.message, 'err'); }
     });
+  });
+
+  // Cambiar contraseña
+  document.querySelectorAll('[data-action="reset-pass"]').forEach(b => {
+    b.addEventListener('click', () => openResetPasswordModal(b.dataset.uid, b.dataset.uname));
+  });
+
+  // Eliminar usuario
+  document.querySelectorAll('[data-action="delete-user"]').forEach(b => {
+    b.addEventListener('click', async () => {
+      const uname = b.dataset.uname;
+      const ok1 = confirm(`¿Eliminar al usuario @${uname}?\n\nEsto borra su cuenta de auth y su perfil. Sus tareas creadas quedarán huérfanas.`);
+      if (!ok1) return;
+      const typed = prompt(`Para confirmar, escribí el username exacto: ${uname}`);
+      if (typed !== uname) { toast('Confirmación incorrecta. No se eliminó.', 'err'); return; }
+      try {
+        await API.adminDeleteUser(secret, b.dataset.uid);
+        adminState.users = adminState.users.filter(u => u.id !== b.dataset.uid);
+        toast('Usuario eliminado ✓', 'ok');
+        render();
+      } catch (err) { toast(err.message, 'err'); }
+    });
+  });
+}
+
+function openResetPasswordModal(userId, username) {
+  const m = openModal(`
+    <div class="modal" style="max-width:420px;">
+      <h2>🔑 Cambiar contraseña</h2>
+      <div class="modal-sub">Usuario: <b>@${escapeHtml(username)}</b></div>
+      <form id="reset-pass-form">
+        <div class="field">
+          <label>Nueva contraseña</label>
+          <div class="password-wrap">
+            <input type="password" id="rp-new" required minlength="6" placeholder="Mínimo 6 caracteres" autofocus />
+            <button type="button" class="pwd-toggle" data-target="rp-new" aria-label="Mostrar contraseña">👁</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Repetir contraseña</label>
+          <div class="password-wrap">
+            <input type="password" id="rp-rep" required minlength="6" placeholder="Volvé a escribirla" />
+            <button type="button" class="pwd-toggle" data-target="rp-rep" aria-label="Mostrar contraseña">👁</button>
+          </div>
+        </div>
+        <div class="modal-sub" style="color:var(--warn,#f59e0b);">
+          ⚠️ Esto reemplaza la contraseña inmediatamente. Avisale al usuario antes de hacerlo.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-action="cancel">Cancelar</button>
+          <div class="right">
+            <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  `);
+  m.querySelector('[data-action="cancel"]').addEventListener('click', () => m._close());
+  m.querySelector('#reset-pass-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const newPass = m.querySelector('#rp-new').value;
+    const repPass = m.querySelector('#rp-rep').value;
+    if (newPass.length < 6) { toast('Mínimo 6 caracteres', 'err'); return; }
+    if (newPass !== repPass) { toast('Las contraseñas no coinciden', 'err'); return; }
+    const secret = localStorage.getItem(SESSION_KEY);
+    try {
+      await API.adminResetPassword(secret, userId, newPass);
+      m._close();
+      toast(`Contraseña de @${username} actualizada ✓`, 'ok');
+    } catch (err) { toast(err.message, 'err'); }
   });
 }

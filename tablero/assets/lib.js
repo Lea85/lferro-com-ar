@@ -301,6 +301,18 @@ const API = {
     });
     if (error) throw new Error(error.message);
   },
+  async adminResetPassword(secret, userId, newPassword) {
+    const { error } = await sb.rpc('admin_reset_password', {
+      p_secret: secret, p_user_id: userId, p_new_password: newPassword
+    });
+    if (error) throw new Error(error.message);
+  },
+  async adminDeleteUser(secret, userId) {
+    const { error } = await sb.rpc('admin_delete_user', {
+      p_secret: secret, p_user_id: userId
+    });
+    if (error) throw new Error(error.message);
+  },
   async adminSetUserRole(secret, userId, role) {
     const { error } = await sb.rpc('admin_set_user_role', {
       p_secret: secret, p_user_id: userId, p_role: role

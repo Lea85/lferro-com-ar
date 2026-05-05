@@ -530,6 +530,49 @@ $$;
 
 grant execute on function public.admin_set_user_role(text, uuid, text) to anon, authenticated;
 
+-- ============ RESETEAR CONTRASEÑA DE OTRO USUARIO ============
+-- Permite al admin del Tablero cambiar la contraseña de cualquier usuario.
+-- Actualiza directamente auth.users.encrypted_password con bcrypt (que es
+-- el mismo algoritmo que usa Supabase Auth internamente, formato $2a$/$2b$).
+create or replace function public.admin_reset_password(
+  p_secret text, p_user_id uuid, p_new_password text
+) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public._validate_tablero_admin(p_secret);
+  if p_new_password is null or char_length(p_new_password) < 6 then
+    raise exception 'La nueva contraseña debe tener al menos 6 caracteres';
+  end if;
+  update auth.users
+     set encrypted_password = extensions.crypt(p_new_password, extensions.gen_salt('bf', 10)),
+         updated_at = now()
+   where id = p_user_id;
+  if not found then
+    raise exception 'Usuario no encontrado';
+  end if;
+end;
+$$;
+
+grant execute on function public.admin_reset_password(text, uuid, text) to anon, authenticated;
+
+-- Eliminar usuario completo (perfil + auth.users)
+create or replace function public.admin_delete_user(
+  p_secret text, p_user_id uuid
+) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public._validate_tablero_admin(p_secret);
+  -- Borra de auth.users; el cascade en profiles (id references auth.users)
+  -- limpia profile, project_access, etc.
+  delete from auth.users where id = p_user_id;
+  if not found then
+    raise exception 'Usuario no encontrado';
+  end if;
+end;
+$$;
+
+grant execute on function public.admin_delete_user(text, uuid) to anon, authenticated;
+
 -- Ping para validar credenciales admin sin efectos colaterales
 create or replace function public.admin_ping(p_secret text)
 returns boolean
