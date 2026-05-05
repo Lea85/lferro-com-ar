@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prode Francisco · ¿Cuándo nace?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%B6%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="brand">
+        <a href="/" class="back" title="Volver al inicio">←</a>
+        <div class="brand-logo">👶</div>
+        <div>
+          <h1>Prode Francisco</h1>
+          <p>¿Qué día y a qué hora nace? Hacé tu apuesta 🎯</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div id="status-pill" class="badge status">
+          <span class="dot"></span>
+          <span id="status-text">Conectando…</span>
+        </div>
+        <div class="badge"><span id="badge-text">0 apuestas</span></div>
+      </div>
+    </header>
+
+    <div id="config-banner" class="banner hidden">
+      <strong>⚠️ Falta configurar Supabase.</strong>
+      Editá <code>francisprode/assets/config.js</code> con tu <code>SUPABASE_URL</code> y <code>SUPABASE_ANON_KEY</code>.
+      Mientras tanto la app funciona en modo offline (los datos quedan solo en este navegador).
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="step-row"><span class="num">1</span><span>Tu nombre</span></div>
+        <h2>¿Quién apuesta?</h2>
+        <p class="sub">Escribí tu nombre para identificarte. Podés hacer hasta <b>3 apuestas</b>.</p>
+        <input type="text" id="name-input" class="name-input" placeholder="Ej: Lucía, Martín, Sofi…" maxlength="30" autocomplete="off" />
+        <div class="name-meta">
+          <span>Apuestas usadas: <b id="used-count">0</b> / 3</span>
+          <span id="remaining-text">Te quedan 3 disponibles</span>
+        </div>
+
+        <div class="step-row" style="margin-top: 26px;"><span class="num">2</span><span>Elegí el día</span></div>
+        <h2>Calendario</h2>
+        <p class="sub">Solo se pueden seleccionar fechas entre el <b>06/05/2026</b> y el <b>30/06/2026</b>.</p>
+
+        <div class="cal-head">
+          <div class="cal-title" id="cal-title">mayo 2026</div>
+          <div class="cal-nav">
+            <button id="cal-prev" title="Mes anterior">‹</button>
+            <button id="cal-next" title="Mes siguiente">›</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="legend">
+          <span><span class="sw empty"></span>Libre</span>
+          <span><span class="sw partial"></span>Algunos slots ocupados</span>
+          <span><span class="sw full"></span>Todos los slots ocupados</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="step-row"><span class="num">3</span><span>Elegí el horario</span></div>
+        <div class="slots-header">
+          <h3>Franja horaria</h3>
+          <div class="selected-date" id="selected-date-pill">Seleccioná un día</div>
+        </div>
+        <div id="slots" class="slots"></div>
+
+        <hr style="border: none; border-top: 1px solid var(--line); margin: 24px 0 18px;" />
+
+        <div class="bets-toolbar">
+          <h2 style="margin: 0;">Apuestas</h2>
+          <div class="filter" id="filter">
+            <button data-filter="all" class="active">Todas</button>
+            <button data-filter="mine">Las mías</button>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Apuestas</div></div>
+          <div class="stat"><div class="num" id="stat-people">0</div><div class="lbl">Personas</div></div>
+          <div class="stat"><div class="num" id="stat-days">0</div><div class="lbl">Días con apuestas</div></div>
+        </div>
+        <div class="bets-list" id="bets-list"></div>
+      </section>
+    </div>
+
+    <div class="footer-note">
+      Hecho con ❤️ por Leandro · <a href="/">Volver a lferro.com.ar</a>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./assets/config.js"></script>
+  <script src="./assets/app.js"></script>
+</body>
+</html>
