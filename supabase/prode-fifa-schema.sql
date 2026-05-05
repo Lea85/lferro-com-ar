@@ -23,7 +23,10 @@
 -- =============================================================
 
 -- ============ EXTENSIONES ============
-create extension if not exists pgcrypto;
+-- pgcrypto se usa para hashear contraseñas (crypt + gen_salt).
+-- En Supabase ya viene instalada en el schema "extensions".
+-- Si no estuviera, este create la instala. Si ya existe, no hace nada.
+create extension if not exists pgcrypto with schema extensions;
 
 -- ============ LIMPIEZA OPCIONAL ============
 -- Descomentar si querés re-crear todo de cero
@@ -186,7 +189,7 @@ begin
 
   begin
     insert into public.players (name, password_hash)
-    values (v_clean, crypt(p_password, gen_salt('bf', 8)))
+    values (v_clean, extensions.crypt(p_password, extensions.gen_salt('bf', 8)))
     returning players.id, players.auth_token into v_id, v_token;
   exception when unique_violation then
     raise exception 'Ya existe un jugador con ese nombre';
@@ -208,7 +211,7 @@ begin
     into v_id, v_hash, v_token, v_admin, v_name
     from public.players pl where pl.name = trim(p_name);
 
-  if v_id is null or v_hash <> crypt(p_password, v_hash) then
+  if v_id is null or v_hash <> extensions.crypt(p_password, v_hash) then
     raise exception 'Usuario o contraseña incorrectos';
   end if;
 
