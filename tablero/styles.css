@@ -712,7 +712,43 @@ code, .mono { font-family: var(--mono); }
   color: var(--danger);
   text-align: center;
   min-height: 16px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 6px;
+  padding: 0;
 }
+.auth-error:not(:empty) {
+  padding: 8px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* ===== Password con ojito de mostrar/ocultar ===== */
+.password-wrap {
+  position: relative;
+  display: block;
+}
+.password-wrap input {
+  padding-right: 42px !important;
+}
+.pwd-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 6px 8px;
+  color: var(--slate-400);
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 6px;
+  user-select: none;
+}
+.pwd-toggle:hover { color: var(--cyan-400); background: rgba(34, 211, 238, 0.08); }
+.pwd-toggle:focus { outline: none; color: var(--cyan-400); }
 
 /* ===== Empty / loading ===== */
 .empty-state, .loading {

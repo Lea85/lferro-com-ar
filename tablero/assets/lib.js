@@ -80,30 +80,57 @@ const Auth = {
 };
 
 function translateAuthError(error) {
+  // Siempre logueo el error original para diagnostico
+  console.warn('[Auth] error original:', error);
   const msg = (error?.message || '').trim();
+  const status = error?.status || error?.code || '';
   const lower = msg.toLowerCase();
-  if (lower.includes('invalid login credentials')) return 'Usuario o contraseña incorrectos';
-  if (lower.includes('user already registered')) return 'Ese usuario ya existe';
-  if (lower.includes('password should be at least')) return 'La contraseña debe tener al menos 6 caracteres';
-  if (lower.includes('email rate limit')) return 'Demasiados intentos. Esperá unos minutos.';
+  if (lower.includes('invalid login credentials')) return 'Usuario o contraseña incorrectos. ¿Tal vez nunca creaste la cuenta? Probá la pestaña "Crear cuenta".';
+  if (lower.includes('user already registered') || lower.includes('already been registered')) return 'Ese usuario ya existe. Probá ingresar con tu contraseña.';
+  if (lower.includes('password should be at least')) return 'La contraseña debe tener al menos 6 caracteres.';
+  if (lower.includes('weak password') || lower.includes('weak_password')) return 'La contraseña es demasiado débil. Usá al menos 6 caracteres.';
+  if (lower.includes('rate limit') || lower.includes('rate_limit') || lower.includes('too many')) {
+    return 'Demasiados intentos. Esperá 5-10 minutos antes de volver a probar.';
+  }
   if (lower.includes('email address') && lower.includes('invalid')) {
-    return 'Username inválido. Usá solo letras, números, punto, guion o guion bajo.';
+    return 'Usuario inválido. Usá solo letras, números, punto, guion o guion bajo.';
   }
   if (lower.includes('signup') && lower.includes('disabled')) {
-    return 'El registro está deshabilitado en Supabase. Activalo en Auth → Providers → Email.';
+    return 'El registro está deshabilitado en Supabase. Activalo en Authentication → Providers → Email.';
   }
-  if (lower.includes('email') && lower.includes('confirmation')) {
-    return 'Tenés activada la confirmación por email. Desactivala en Supabase: Auth → Providers → Email → "Confirm email" en OFF.';
+  if (lower.includes('email') && (lower.includes('confirmation') || lower.includes('confirm'))) {
+    return 'Tenés activada la confirmación por email. Desactivala en Supabase: Authentication → Providers → Email → "Confirm email" en OFF.';
   }
   if (lower.includes('email not confirmed')) {
-    return 'El usuario existe pero requiere confirmación por email. Desactivá "Confirm email" en Supabase.';
+    return 'El usuario existe pero requiere confirmación por email. Desactivá "Confirm email" en Supabase Authentication.';
   }
   if (lower.includes('database error')) {
-    return `Error en la base: ${msg}. ¿Corriste el SQL del Tablero (supabase/tablero-schema.sql)?`;
+    return `Error en la base: ${msg}. ¿Corriste el SQL del Tablero (supabase/tablero-schema.sql) en Supabase?`;
   }
-  // Si no matcheo nada, devuelvo el mensaje crudo para diagnosticar
-  return msg || 'Error desconocido al autenticar';
+  if (lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('network error')) {
+    return 'No se pudo conectar con Supabase. Revisá la conexión a internet o si la red corporativa bloquea supabase.co.';
+  }
+  if (lower.includes('not configured') || lower.includes('supabase no')) {
+    return 'Supabase no está configurado. Falta tablero/assets/config.js o las credenciales son inválidas.';
+  }
+  // Si no matcheo nada, devuelvo el mensaje crudo + status para diagnosticar
+  const suffix = status ? ` (${status})` : '';
+  return (msg || 'Error desconocido al autenticar') + suffix;
 }
+
+// ===== Toggle de mostrar/ocultar contraseña (delegado en document) =====
+document.addEventListener('click', e => {
+  const btn = e.target.closest && e.target.closest('.pwd-toggle');
+  if (!btn) return;
+  e.preventDefault();
+  const targetId = btn.dataset.target;
+  const input = targetId ? document.getElementById(targetId) : btn.parentElement?.querySelector('input');
+  if (!input) return;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.textContent = showing ? '👁' : '🙈';
+  btn.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
+});
 
 // ===== API =====
 const API = {

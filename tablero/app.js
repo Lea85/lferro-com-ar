@@ -107,12 +107,20 @@ function showAuth() {
     submit.disabled = true;
     submit.textContent = mode === 'login' ? 'Ingresando…' : 'Creando…';
     try {
-      if (mode === 'login') await Auth.signIn(user, pass);
-      else {
-        await Auth.signUp(user, pass);
-        toast('Cuenta creada ✓', 'ok');
+      if (mode === 'login') {
+        await Auth.signIn(user, pass);
+      } else {
+        const data = await Auth.signUp(user, pass);
+        // Si Supabase requiere confirm-email, no devuelve session
+        if (!data?.session) {
+          err.style.color = 'var(--ok, #22c55e)';
+          err.textContent = 'Cuenta creada, pero Supabase pide confirmación por email. Desactivá "Confirm email" en Authentication → Providers → Email y volvé a ingresar.';
+        } else {
+          toast('Cuenta creada ✓ Bienvenido', 'ok');
+        }
       }
     } catch (ex) {
+      err.style.color = '';
       err.textContent = ex.message;
     } finally {
       submit.disabled = false;

@@ -16,6 +16,20 @@ if (SUPA_OK && window.supabase) {
 // Lock de bloqueo: 1 hora antes
 const LOCK_MS = 60 * 60 * 1000;
 
+// ===== Toggle mostrar/ocultar contraseña (delegado en document) =====
+document.addEventListener('click', e => {
+  const btn = e.target.closest && e.target.closest('.pwd-toggle');
+  if (!btn) return;
+  e.preventDefault();
+  const targetId = btn.dataset.target;
+  const input = targetId ? document.getElementById(targetId) : btn.parentElement?.querySelector('input');
+  if (!input) return;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.textContent = showing ? '👁' : '🙈';
+  btn.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
+});
+
 // ===== Sesión =====
 const SESSION_KEY = 'prode-fifa-session';
 const ADMIN_SESSION_KEY = 'prode-fifa-admin';
@@ -289,7 +303,10 @@ function renderAuthGate(onLogin) {
         <label>Nombre</label>
         <input type="text" id="auth-name" maxlength="30" required placeholder="Tu nombre" />
         <label>Contraseña</label>
-        <input type="password" id="auth-pass" minlength="4" required placeholder="Mínimo 4 caracteres" />
+        <div class="password-wrap">
+          <input type="password" id="auth-pass" minlength="4" required placeholder="Mínimo 4 caracteres" />
+          <button type="button" class="pwd-toggle" data-target="auth-pass" aria-label="Mostrar contraseña" title="Mostrar/ocultar contraseña">👁</button>
+        </div>
         <button class="btn-primary" type="submit" id="auth-submit">Ingresar</button>
         <div class="auth-error" id="auth-error"></div>
       </form>

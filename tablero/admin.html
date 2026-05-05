@@ -25,7 +25,10 @@
         </div>
         <div class="field">
           <label>Contraseña</label>
-          <input type="password" id="adm-pass" required placeholder="contraseña" />
+          <div class="password-wrap">
+            <input type="password" id="adm-pass" required placeholder="contraseña" />
+            <button type="button" class="pwd-toggle" data-target="adm-pass" aria-label="Mostrar contraseña" title="Mostrar/ocultar contraseña">👁</button>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary" id="adm-submit">Ingresar</button>
         <div class="auth-error" id="adm-err"></div>

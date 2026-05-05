@@ -31,7 +31,10 @@
         </div>
         <div class="field">
           <label>Contraseña</label>
-          <input type="password" id="auth-pass" required minlength="6" placeholder="Mínimo 6 caracteres" />
+          <div class="password-wrap">
+            <input type="password" id="auth-pass" required minlength="6" placeholder="Mínimo 6 caracteres" />
+            <button type="button" class="pwd-toggle" data-target="auth-pass" aria-label="Mostrar contraseña" title="Mostrar/ocultar contraseña">👁</button>
+          </div>
         </div>
         <button class="btn btn-primary" type="submit" id="auth-submit">Ingresar</button>
         <div class="auth-error" id="auth-error"></div>

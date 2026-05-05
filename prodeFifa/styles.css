@@ -472,7 +472,42 @@ html, body {
   color: var(--danger);
   text-align: center;
   min-height: 18px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.45;
 }
+.auth-error:not(:empty) {
+  padding: 8px 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+}
+
+/* ===== Password con ojito ===== */
+.password-wrap {
+  position: relative;
+  display: block;
+}
+.password-wrap input {
+  padding-right: 42px !important;
+}
+.pwd-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 6px 8px;
+  color: var(--muted, #888);
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 6px;
+  user-select: none;
+}
+.pwd-toggle:hover { background: rgba(0,0,0,0.06); }
+.pwd-toggle:focus { outline: none; }
 
 /* ===== Ranking ===== */
 .podium {
