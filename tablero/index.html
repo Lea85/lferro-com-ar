@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/tablero/" />
+  <title>Tablero de Cambios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Auth wall -->
+  <div id="auth-wrap" class="auth-wrap hidden">
+    <div class="auth-card">
+      <div class="logo">📋</div>
+      <h1>Tablero de Cambios</h1>
+      <p class="sub">Gestión de proyectos tecnológicos</p>
+
+      <div class="auth-tabs">
+        <button class="active" data-mode="login">Ingresar</button>
+        <button data-mode="register">Crear cuenta</button>
+      </div>
+
+      <form class="auth-form" id="auth-form" autocomplete="off">
+        <div class="field">
+          <label>Usuario</label>
+          <input type="text" id="auth-user" required placeholder="tu.usuario" pattern="[a-zA-Z0-9._-]{2,30}" />
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="auth-pass" required minlength="6" placeholder="Mínimo 6 caracteres" />
+        </div>
+        <button class="btn btn-primary" type="submit" id="auth-submit">Ingresar</button>
+        <div class="auth-error" id="auth-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="app hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <button class="sb-toggle" id="sb-toggle" title="Colapsar/expandir">‹</button>
+
+      <div class="sb-logo">
+        <div class="icon">📋</div>
+        <div class="sb-only-expanded name">
+          Tablero
+          <small>de cambios</small>
+        </div>
+      </div>
+
+      <div class="sb-section-title">Proyectos</div>
+      <div id="sb-projects" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <button class="sb-add" id="sb-add-project">＋ Nuevo proyecto</button>
+
+      <div class="sb-bottom">
+        <a href="/" class="sb-btn"><span class="icon">←</span><span class="sb-only-expanded">Volver al inicio</span></a>
+        <a href="/tablero/admin/" class="sb-btn"><span class="icon">🔐</span><span class="sb-only-expanded">Admin</span></a>
+        <button class="sb-btn" id="sb-logout"><span class="icon">⏻</span><span class="sb-only-expanded">Salir</span></button>
+        <div class="sb-only-expanded" id="sb-user" style="font-size:11px;color:var(--slate-500);padding:8px 10px;font-family:var(--mono);"></div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 class="title" id="proj-title">—</h1>
+          <div class="subtitle mono" id="proj-subtitle"></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="search-box">
+          <span class="icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Buscar tarea o etiqueta…" />
+        </div>
+        <button class="btn-icon" id="proj-edit" title="Editar proyecto">✎</button>
+        <button class="btn-icon" id="proj-delete" title="Eliminar proyecto">🗑</button>
+      </div>
+
+      <div id="board-root">
+        <div class="loading">Cargando…</div>
+      </div>
+
+      <div class="activity-panel" id="activity-panel" style="display:none;">
+        <h3>📜 Actividad reciente</h3>
+        <div class="activity-list" id="activity-list"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/lib.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

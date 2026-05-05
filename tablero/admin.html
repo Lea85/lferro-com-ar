@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/tablero/" />
+  <title>Admin · Tablero</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%90%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Login admin -->
+  <div id="admin-auth" class="auth-wrap hidden">
+    <div class="auth-card">
+      <div class="logo">🔐</div>
+      <h1>Admin · Tablero</h1>
+      <p class="sub">Acceso restringido</p>
+      <form class="auth-form" id="admin-form">
+        <div class="field">
+          <label>Usuario</label>
+          <input type="text" id="adm-user" required placeholder="usuario" />
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="adm-pass" required placeholder="contraseña" />
+        </div>
+        <button type="submit" class="btn btn-primary" id="adm-submit">Ingresar</button>
+        <div class="auth-error" id="adm-err"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- App admin -->
+  <div id="admin-app" class="hidden">
+    <main class="main" style="max-width:1200px;margin:0 auto;">
+      <div class="topbar">
+        <div>
+          <h1 class="title">Panel de administración</h1>
+          <div class="subtitle mono">Gestión de usuarios y permisos</div>
+        </div>
+        <div class="spacer"></div>
+        <a href="/tablero/" class="btn btn-ghost">← Volver al tablero</a>
+        <button class="btn btn-ghost" id="adm-logout">Salir</button>
+      </div>
+
+      <div id="admin-root">
+        <div class="loading">Cargando…</div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/lib.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
