@@ -131,7 +131,7 @@ async function loadProjects() {
       document.getElementById('board-root').innerHTML = `
         <div class="empty-state">
           <div class="e-emoji">📋</div>
-          <h3>Bienvenidx</h3>
+          <h3>Bienvenido</h3>
           <div>No tenés proyectos asignados. Creá uno nuevo o pedile a un admin que te dé acceso.</div>
           <div style="margin-top:18px;">
             <button class="btn btn-primary" onclick="openCreateProjectModal()">＋ Crear mi primer proyecto</button>
