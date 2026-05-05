@@ -363,7 +363,12 @@ async function deleteBet(id) {
 
 async function refreshBets() {
   try {
-    state.bets = await dataLayer.loadBets();
+    // Timeout para no quedar colgados si la red bloquea Supabase
+    const loadPromise = dataLayer.loadBets();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout: el servidor no responde (¿red bloqueada?)')), 8000)
+    );
+    state.bets = await Promise.race([loadPromise, timeoutPromise]);
     setStatus('ok', supabase ? 'Conectado a Supabase' : 'Modo offline');
   } catch (err) {
     setStatus('err', 'Error de conexión');
@@ -439,15 +444,25 @@ document.querySelectorAll('#filter button').forEach(b => {
   }
   const savedName = localStorage.getItem(NAME_KEY);
   if (savedName) document.getElementById('name-input').value = savedName;
+
+  // Render inicial INMEDIATO con estado vacío para que la UI aparezca
+  // sin esperar a que responda el backend (clave si la red lo bloquea).
+  render();
+
+  // Después intentamos cargar los datos reales (con timeout)
   await refreshBets();
 
   // Realtime: si Supabase está activo, escuchamos cambios y refrescamos
   if (supabase) {
-    supabase
-      .channel('bets-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, async () => {
-        await refreshBets();
-      })
-      .subscribe();
+    try {
+      supabase
+        .channel('bets-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, async () => {
+          await refreshBets();
+        })
+        .subscribe();
+    } catch (err) {
+      console.warn('Realtime no disponible:', err);
+    }
   }
 })();
