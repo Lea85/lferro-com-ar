@@ -11,6 +11,6 @@
 // =============================================================
 
 window.PRODE_CONFIG = {
-  SUPABASE_URL: "https://YOUR-PROJECT-REF.supabase.co",
-  SUPABASE_ANON_KEY: "YOUR-ANON-PUBLIC-KEY"
+  SUPABASE_URL: "https://zfmjjqsmisioeikfswcj.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_jvsndk-NMT2o7L84Z8teFg_li5T4ySw"
 };
