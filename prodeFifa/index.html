@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prode Fifa 2026 · Partidos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%BD%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header id="header" class="header"></header>
+
+    <div class="matches-toolbar">
+      <h2>Partidos</h2>
+      <div class="filter" id="match-filter">
+        <button data-filter="all" class="active">Todos</button>
+        <button data-filter="open">Abiertos</button>
+        <button data-filter="locked">Cerrados / jugados</button>
+      </div>
+    </div>
+
+    <div id="matches-root">
+      <div class="loading">Cargando partidos…</div>
+    </div>
+
+    <div class="footer-note">
+      <a href="./admin.html">Panel de administración →</a>
+    </div>
+  </div>
+
+  <div id="auth-gate" class="auth-gate hidden"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./assets/config.js"></script>
+  <script src="./assets/lib.js"></script>
+  <script src="./home.js"></script>
+</body>
+</html>

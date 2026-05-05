@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Prode Fifa 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%A0%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <a href="/" class="back" title="Volver al inicio">←</a>
+      <div class="brand">
+        <div class="brand-logo">🛠️</div>
+        <div>
+          <h1>Admin · Prode Fifa</h1>
+          <p>Panel de administración</p>
+        </div>
+      </div>
+      <div></div>
+      <div class="user-box" id="admin-user-box"></div>
+    </header>
+
+    <div id="admin-root">
+      <div class="loading">Cargando…</div>
+    </div>
+
+    <div class="footer-note">
+      <a href="./">← Volver a partidos</a>
+    </div>
+  </div>
+
+  <!-- Modal login admin -->
+  <div id="admin-gate" class="auth-gate hidden">
+    <div class="auth-card">
+      <div class="auth-logo">🔐</div>
+      <h2>Panel de Administración</h2>
+      <p class="auth-sub">Acceso restringido. Ingresá usuario y contraseña.</p>
+      <form id="admin-form" autocomplete="off">
+        <label>Usuario</label>
+        <input type="text" id="admin-user" required placeholder="usuario" />
+        <label>Contraseña</label>
+        <input type="password" id="admin-pass" required placeholder="contraseña" />
+        <button class="btn-primary" type="submit" id="admin-submit">Ingresar</button>
+        <div class="auth-error" id="admin-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./assets/config.js"></script>
+  <script src="./assets/lib.js"></script>
+  <script src="./admin.js"></script>
+</body>
+</html>

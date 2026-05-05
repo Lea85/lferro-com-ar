@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ranking · Prode Fifa 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="container">
+    <header id="header" class="header"></header>
+
+    <h2 style="font-family:'Fredoka',sans-serif;margin:0 0 18px;font-size:22px;">🏆 Ranking</h2>
+
+    <div id="podium-root"></div>
+    <div id="ranking-root">
+      <div class="loading">Cargando ranking…</div>
+    </div>
+
+    <div class="share-bar" id="share-bar"></div>
+
+    <div class="footer-note">
+      <a href="./">← Volver a partidos</a>
+    </div>
+  </div>
+
+  <div id="auth-gate" class="auth-gate hidden"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./assets/config.js"></script>
+  <script src="./assets/lib.js"></script>
+  <script src="./ranking.js"></script>
+</body>
+</html>
