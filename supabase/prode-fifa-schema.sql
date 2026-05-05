@@ -9,7 +9,8 @@
 --   - vistas: leaderboard, matches_full, players_public
 --   - funciones RPC: register, login, place_prediction y admin_*
 --   - trigger: recálculo automático de puntos al cargar resultados
---   - seed: 32 equipos populares + 8 partidos de ejemplo
+--   - seed: 48 equipos clasificados al Mundial 2026 (sorteo
+--           oficial FIFA del 5/12/2025) + 12 partidos de apertura
 --   - admin secret hardcoded: "Prode2026" (modificable en app_settings)
 --
 -- Lógica de puntos por partido:
@@ -462,55 +463,120 @@ exception when others then null;
 end $$;
 
 -- =============================================================
--- SEED: equipos populares + algunos partidos de ejemplo
+-- SEED: 48 equipos clasificados al Mundial 2026 + partidos
+-- -------------------------------------------------------------
+-- Fuente: Sorteo oficial FIFA del 5 de diciembre de 2025 en
+-- Washington D.C. El Mundial 2026 se juega del 11 de junio al
+-- 19 de julio en USA, México y Canadá, con 48 equipos divididos
+-- en 12 grupos de 4 (A-L).
+--
+-- Country codes ISO 3166-1 alpha-2 (lowercase). Para Inglaterra
+-- y Escocia se usan los códigos extendidos 'gb-eng' y 'gb-sct'
+-- soportados por flagcdn.com.
+--
+-- ⚠️ Si ya corriste una versión ANTERIOR del schema con los seed
+-- viejos (32 equipos / partidos relativos a hoy), descomentá este
+-- bloque para limpiar partidos y equipos antes de re-sembrar:
+--
+-- delete from public.predictions;
+-- delete from public.matches;
+-- delete from public.teams;
 -- =============================================================
 
--- 32 equipos. Reemplazá / actualizá con los que clasifiquen al Mundial 2026.
 insert into public.teams (id, name, country_code, group_letter) values
-  ( 1, 'Argentina',          'ar', 'A'),
-  ( 2, 'Brasil',              'br', 'A'),
-  ( 3, 'Francia',             'fr', 'B'),
-  ( 4, 'España',              'es', 'B'),
-  ( 5, 'Inglaterra',          'gb', 'C'),
-  ( 6, 'Alemania',            'de', 'C'),
-  ( 7, 'Portugal',            'pt', 'D'),
-  ( 8, 'Países Bajos',        'nl', 'D'),
-  ( 9, 'Italia',              'it', 'E'),
-  (10, 'Bélgica',             'be', 'E'),
-  (11, 'Croacia',             'hr', 'F'),
-  (12, 'Uruguay',             'uy', 'F'),
-  (13, 'Colombia',            'co', 'G'),
-  (14, 'México',              'mx', 'G'),
-  (15, 'Estados Unidos',      'us', 'H'),
-  (16, 'Canadá',              'ca', 'H'),
-  (17, 'Marruecos',           'ma', 'A'),
-  (18, 'Senegal',             'sn', 'B'),
-  (19, 'Japón',               'jp', 'C'),
-  (20, 'Corea del Sur',       'kr', 'D'),
-  (21, 'Australia',           'au', 'E'),
-  (22, 'Polonia',             'pl', 'F'),
-  (23, 'Suiza',               'ch', 'G'),
-  (24, 'Dinamarca',           'dk', 'H'),
-  (25, 'Serbia',              'rs', 'A'),
-  (26, 'Ecuador',             'ec', 'B'),
-  (27, 'Chile',               'cl', 'C'),
-  (28, 'Perú',                'pe', 'D'),
-  (29, 'Paraguay',            'py', 'E'),
-  (30, 'Costa Rica',          'cr', 'F'),
-  (31, 'Arabia Saudita',      'sa', 'G'),
-  (32, 'Irán',                'ir', 'H')
-on conflict (id) do nothing;
+  -- Grupo A
+  ( 1, 'México',                'mx',     'A'),
+  ( 2, 'Sudáfrica',             'za',     'A'),
+  ( 3, 'Corea del Sur',         'kr',     'A'),
+  ( 4, 'Chequia',               'cz',     'A'),
+  -- Grupo B
+  ( 5, 'Canadá',                'ca',     'B'),
+  ( 6, 'Bosnia y Herzegovina',  'ba',     'B'),
+  ( 7, 'Qatar',                 'qa',     'B'),
+  ( 8, 'Suiza',                 'ch',     'B'),
+  -- Grupo C
+  ( 9, 'Brasil',                'br',     'C'),
+  (10, 'Marruecos',             'ma',     'C'),
+  (11, 'Haití',                 'ht',     'C'),
+  (12, 'Escocia',               'gb-sct', 'C'),
+  -- Grupo D
+  (13, 'Estados Unidos',        'us',     'D'),
+  (14, 'Paraguay',              'py',     'D'),
+  (15, 'Australia',             'au',     'D'),
+  (16, 'Turquía',               'tr',     'D'),
+  -- Grupo E
+  (17, 'Alemania',              'de',     'E'),
+  (18, 'Curazao',               'cw',     'E'),
+  (19, 'Costa de Marfil',       'ci',     'E'),
+  (20, 'Ecuador',               'ec',     'E'),
+  -- Grupo F
+  (21, 'Países Bajos',          'nl',     'F'),
+  (22, 'Japón',                 'jp',     'F'),
+  (23, 'Suecia',                'se',     'F'),
+  (24, 'Túnez',                 'tn',     'F'),
+  -- Grupo G
+  (25, 'Bélgica',               'be',     'G'),
+  (26, 'Egipto',                'eg',     'G'),
+  (27, 'Irán',                  'ir',     'G'),
+  (28, 'Nueva Zelanda',         'nz',     'G'),
+  -- Grupo H
+  (29, 'España',                'es',     'H'),
+  (30, 'Cabo Verde',            'cv',     'H'),
+  (31, 'Arabia Saudita',        'sa',     'H'),
+  (32, 'Uruguay',               'uy',     'H'),
+  -- Grupo I
+  (33, 'Francia',               'fr',     'I'),
+  (34, 'Senegal',               'sn',     'I'),
+  (35, 'Noruega',               'no',     'I'),
+  (36, 'Irak',                  'iq',     'I'),
+  -- Grupo J
+  (37, 'Argentina',             'ar',     'J'),
+  (38, 'Argelia',               'dz',     'J'),
+  (39, 'Austria',               'at',     'J'),
+  (40, 'Jordania',              'jo',     'J'),
+  -- Grupo K
+  (41, 'Portugal',              'pt',     'K'),
+  (42, 'RD del Congo',          'cd',     'K'),
+  (43, 'Uzbekistán',            'uz',     'K'),
+  (44, 'Colombia',              'co',     'K'),
+  -- Grupo L
+  (45, 'Inglaterra',            'gb-eng', 'L'),
+  (46, 'Croacia',               'hr',     'L'),
+  (47, 'Ghana',                 'gh',     'L'),
+  (48, 'Panamá',                'pa',     'L')
+on conflict (id) do update set
+  name         = excluded.name,
+  country_code = excluded.country_code,
+  group_letter = excluded.group_letter;
 
--- Partidos de ejemplo (start_time relativos a hoy para que se vean activos)
+-- Partidos de apertura: 1 por grupo (12 partidos), del 11 al 17 de junio 2026.
+-- Las horas son aproximadas (en UTC). El admin puede editarlas / agregar más.
+-- México vs Sudáfrica abre el torneo en el Estadio Azteca el 11/06.
 insert into public.matches (home_team_id, away_team_id, start_time, phase) values
-  ( 1,  2, now() + interval '2 days',  'group'),
-  ( 3,  4, now() + interval '2 days 3 hours',  'group'),
-  ( 5,  6, now() + interval '3 days',  'group'),
-  ( 7,  8, now() + interval '3 days 3 hours',  'group'),
-  ( 9, 10, now() + interval '4 days',  'group'),
-  (11, 12, now() + interval '5 days',  'group'),
-  (13, 14, now() + interval '6 days',  'group'),
-  (15, 16, now() + interval '7 days',  'group')
+  -- Grupo A (apertura)
+  ( 1,  2, '2026-06-11 19:00:00+00', 'group'),  -- México - Sudáfrica
+  -- Grupo B
+  ( 5,  8, '2026-06-12 19:00:00+00', 'group'),  -- Canadá - Suiza
+  -- Grupo C
+  ( 9, 10, '2026-06-13 22:00:00+00', 'group'),  -- Brasil - Marruecos
+  -- Grupo D
+  (13, 16, '2026-06-12 22:00:00+00', 'group'),  -- USA - Turquía
+  -- Grupo E
+  (17, 18, '2026-06-14 19:00:00+00', 'group'),  -- Alemania - Curazao
+  -- Grupo F
+  (21, 22, '2026-06-13 19:00:00+00', 'group'),  -- Países Bajos - Japón
+  -- Grupo G
+  (25, 26, '2026-06-14 22:00:00+00', 'group'),  -- Bélgica - Egipto
+  -- Grupo H
+  (29, 30, '2026-06-15 19:00:00+00', 'group'),  -- España - Cabo Verde
+  -- Grupo I
+  (33, 34, '2026-06-15 22:00:00+00', 'group'),  -- Francia - Senegal
+  -- Grupo J
+  (37, 38, '2026-06-16 19:00:00+00', 'group'),  -- Argentina - Argelia
+  -- Grupo K
+  (41, 42, '2026-06-16 22:00:00+00', 'group'),  -- Portugal - RD del Congo
+  -- Grupo L
+  (45, 46, '2026-06-17 19:00:00+00', 'group')   -- Inglaterra - Croacia
 on conflict do nothing;
 
 -- =============================================================
