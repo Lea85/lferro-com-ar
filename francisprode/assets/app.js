@@ -21,9 +21,9 @@ const SUPABASE_OK =
   !cfg.SUPABASE_URL.includes('YOUR-PROJECT-REF') &&
   !cfg.SUPABASE_ANON_KEY.includes('YOUR-ANON');
 
-let supabase = null;
+let supabaseClient = null;
 if (SUPABASE_OK && window.supabase) {
-  supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+  supabaseClient = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 }
 
 // ===== Estado =====
@@ -59,8 +59,8 @@ function normalizeName(s) { return (s || '').trim().toLowerCase(); }
 // ===== Capa de datos =====
 const dataLayer = {
   async loadBets() {
-    if (supabase) {
-      const { data, error } = await supabase
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient
         .from('bets')
         .select('id, name, date_key, slot_id, created_at')
         .order('date_key', { ascending: true })
@@ -80,8 +80,8 @@ const dataLayer = {
   },
 
   async placeBet(name, dateKeyStr, slotId) {
-    if (supabase) {
-      const { data, error } = await supabase.rpc('place_bet', {
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient.rpc('place_bet', {
         p_name: name,
         p_date_key: dateKeyStr,
         p_slot_id: slotId
@@ -115,8 +115,8 @@ const dataLayer = {
   },
 
   async deleteBet(id, name) {
-    if (supabase) {
-      const { error } = await supabase.rpc('delete_bet', {
+    if (supabaseClient) {
+      const { error } = await supabaseClient.rpc('delete_bet', {
         p_id: id,
         p_name: name
       });
@@ -369,7 +369,7 @@ async function refreshBets() {
       setTimeout(() => reject(new Error('Timeout: el servidor no responde (¿red bloqueada?)')), 8000)
     );
     state.bets = await Promise.race([loadPromise, timeoutPromise]);
-    setStatus('ok', supabase ? 'Conectado a Supabase' : 'Modo offline');
+    setStatus('ok', supabaseClient ? 'Conectado a Supabase' : 'Modo offline');
   } catch (err) {
     setStatus('err', 'Error de conexión');
     showToast(err.message || 'No se pudieron cargar las apuestas', 'err');
@@ -453,9 +453,9 @@ document.querySelectorAll('#filter button').forEach(b => {
   await refreshBets();
 
   // Realtime: si Supabase está activo, escuchamos cambios y refrescamos
-  if (supabase) {
+  if (supabaseClient) {
     try {
-      supabase
+      supabaseClient
         .channel('bets-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, async () => {
           await refreshBets();
