@@ -51,12 +51,20 @@ function scheduleRefresh(reason) {
 
 // ---------- Bootstrap ----------
 (async function bootstrap() {
-  const session = await Auth.getSession();
-  if (!session) {
-    showAuth();
-    return;
+  try {
+    const session = await Auth.getSession();
+    if (!session) {
+      showAuth();
+      return;
+    }
+    await startApp();
+  } catch (err) {
+    console.error('Bootstrap fallo:', err);
+    // Si algo explota, mostramos al menos el form de auth con el error
+    try { showAuth(); } catch {}
+    const errBox = document.getElementById('auth-error');
+    if (errBox) errBox.textContent = 'Error inicial: ' + (err?.message || err);
   }
-  await startApp();
 })();
 
 Auth.onChange(async (event, session) => {

@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body>
-  <!-- Auth wall -->
-  <div id="auth-wrap" class="auth-wrap hidden">
+  <!-- Auth wall (visible por defecto: si JS falla, igual se ve el form) -->
+  <div id="auth-wrap" class="auth-wrap">
     <div class="auth-card">
       <div class="logo">📋</div>
       <h1>Tablero de Cambios</h1>
@@ -27,7 +27,7 @@
       <form class="auth-form" id="auth-form" autocomplete="off">
         <div class="field">
           <label>Usuario</label>
-          <input type="text" id="auth-user" required placeholder="tu.usuario" pattern="[a-zA-Z0-9._-]{2,30}" />
+          <input type="text" id="auth-user" required placeholder="tu.usuario" pattern="[A-Za-z0-9._\-]{2,30}" />
         </div>
         <div class="field">
           <label>Contraseña</label>
@@ -94,8 +94,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-  <script src="assets/config.js"></script>
-  <script src="assets/lib.js"></script>
-  <script src="app.js"></script>
+  <script src="assets/config.js?v=3"></script>
+  <script src="assets/lib.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
