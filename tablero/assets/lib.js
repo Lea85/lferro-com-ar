@@ -80,12 +80,29 @@ const Auth = {
 };
 
 function translateAuthError(error) {
-  const msg = error.message || '';
-  if (msg.includes('Invalid login credentials')) return 'Usuario o contraseña incorrectos';
-  if (msg.includes('User already registered')) return 'Ese usuario ya existe';
-  if (msg.includes('Password should be at least')) return 'La contraseña debe tener al menos 6 caracteres';
-  if (msg.includes('email')) return 'Username inválido (usá solo letras, números, guion o punto)';
-  return msg;
+  const msg = (error?.message || '').trim();
+  const lower = msg.toLowerCase();
+  if (lower.includes('invalid login credentials')) return 'Usuario o contraseña incorrectos';
+  if (lower.includes('user already registered')) return 'Ese usuario ya existe';
+  if (lower.includes('password should be at least')) return 'La contraseña debe tener al menos 6 caracteres';
+  if (lower.includes('email rate limit')) return 'Demasiados intentos. Esperá unos minutos.';
+  if (lower.includes('email address') && lower.includes('invalid')) {
+    return 'Username inválido. Usá solo letras, números, punto, guion o guion bajo.';
+  }
+  if (lower.includes('signup') && lower.includes('disabled')) {
+    return 'El registro está deshabilitado en Supabase. Activalo en Auth → Providers → Email.';
+  }
+  if (lower.includes('email') && lower.includes('confirmation')) {
+    return 'Tenés activada la confirmación por email. Desactivala en Supabase: Auth → Providers → Email → "Confirm email" en OFF.';
+  }
+  if (lower.includes('email not confirmed')) {
+    return 'El usuario existe pero requiere confirmación por email. Desactivá "Confirm email" en Supabase.';
+  }
+  if (lower.includes('database error')) {
+    return `Error en la base: ${msg}. ¿Corriste el SQL del Tablero (supabase/tablero-schema.sql)?`;
+  }
+  // Si no matcheo nada, devuelvo el mensaje crudo para diagnosticar
+  return msg || 'Error desconocido al autenticar';
 }
 
 // ===== API =====
