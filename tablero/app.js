@@ -622,10 +622,16 @@ async function deleteCurrentProject() {
   }
 }
 
+// Template tipo user story para descripcion de tareas nuevas
+const NEW_TASK_DESCRIPTION_TEMPLATE =
+  'Yo como: (administrador / cliente / visitante de la pagina)\n' +
+  'quiero que: \n' +
+  'para: \n';
+
 function openTaskModal(taskOrShell) {
   const isNew = !taskOrShell.id;
   const t = isNew
-    ? { title: '', description: '', priority: 'media', due_date: '', labels: [], column_id: taskOrShell.column_id }
+    ? { title: '', description: NEW_TASK_DESCRIPTION_TEMPLATE, priority: 'media', due_date: '', labels: [], column_id: taskOrShell.column_id }
     : { ...taskOrShell };
 
   const m = openModal(`
