@@ -83,13 +83,27 @@ function showAuth() {
 
   let mode = 'login';
   const submit = document.getElementById('auth-submit');
-  document.querySelectorAll('.auth-tabs button').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('.auth-tabs button').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      mode = b.dataset.mode;
-      submit.textContent = mode === 'login' ? 'Ingresar' : 'Crear cuenta';
+  const sub = document.getElementById('auth-sub');
+  const hint = document.getElementById('auth-hint');
+  const errBox = document.getElementById('auth-error');
+
+  function applyMode(newMode) {
+    mode = newMode;
+    document.querySelectorAll('.auth-tabs button').forEach(x => {
+      x.classList.toggle('active', x.dataset.mode === mode);
     });
+    submit.textContent = mode === 'login' ? 'Ingresar' : 'Crear cuenta';
+    if (sub)  sub.textContent  = mode === 'login' ? 'Ingresá con tu usuario y contraseña' : 'Elegí un usuario y una contraseña nueva';
+    if (hint) hint.textContent = mode === 'login' ? '¿Sos nuevo? Tocá "Crear cuenta" arriba.' : '¿Ya tenés cuenta? Tocá "Ingresar" arriba.';
+    if (errBox) { errBox.textContent = ''; errBox.style.color = ''; }
+  }
+
+  // Listener delegado: aunque el HTML cambie, sigue funcionando
+  document.querySelector('.auth-tabs')?.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    e.preventDefault();
+    applyMode(btn.dataset.mode);
   });
 
   document.getElementById('auth-form').addEventListener('submit', async e => {

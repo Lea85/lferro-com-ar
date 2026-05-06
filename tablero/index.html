@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
   <!-- Auth wall (visible por defecto: si JS falla, igual se ve el form) -->
@@ -17,11 +17,11 @@
     <div class="auth-card">
       <div class="logo">📋</div>
       <h1>Tablero de Cambios</h1>
-      <p class="sub">Gestión de proyectos tecnológicos</p>
+      <p class="sub" id="auth-sub">Ingresá con tu usuario y contraseña</p>
 
       <div class="auth-tabs">
-        <button class="active" data-mode="login">Ingresar</button>
-        <button data-mode="register">Crear cuenta</button>
+        <button type="button" class="active" data-mode="login">Ingresar</button>
+        <button type="button" data-mode="register">Crear cuenta</button>
       </div>
 
       <form class="auth-form" id="auth-form" autocomplete="off">
@@ -37,6 +37,7 @@
           </div>
         </div>
         <button class="btn btn-primary" type="submit" id="auth-submit">Ingresar</button>
+        <div class="auth-hint" id="auth-hint">¿Sos nuevo? Tocá "Crear cuenta" arriba.</div>
         <div class="auth-error" id="auth-error"></div>
       </form>
     </div>
@@ -97,8 +98,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-  <script src="assets/config.js?v=4"></script>
-  <script src="assets/lib.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <script src="assets/config.js?v=5"></script>
+  <script src="assets/lib.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
