@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%B6%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles.css?v=3" />
+  <link rel="stylesheet" href="./styles.css?v=4" />
 </head>
 <body>
   <div class="container">
@@ -131,18 +131,19 @@
         </div>
       </div>
 
-      <a class="gift-mp" href="https://www.mercadopago.com.ar/" target="_blank" rel="noopener noreferrer">
+      <a class="gift-mp" id="gift-mp-btn" href="https://www.mercadopago.com.ar/" target="_blank" rel="noopener noreferrer">
         <span style="font-size:18px;">💸</span>
-        Abrir Mercado Pago
+        <span id="gift-mp-text">Abrir Mercado Pago</span>
         <span style="font-size:14px; opacity:.85;">↗</span>
       </a>
+      <div class="gift-mp-hint" id="gift-mp-hint" style="display:none;"></div>
 
       <div class="gift-foot">¡Gracias de corazón! 💙</div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./assets/config.js?v=3"></script>
-  <script src="./assets/app.js?v=3"></script>
+  <script src="./assets/config.js?v=4"></script>
+  <script src="./assets/app.js?v=4"></script>
 </body>
 </html>

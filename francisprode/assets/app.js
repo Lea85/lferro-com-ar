@@ -537,6 +537,61 @@ document.querySelectorAll('#filter button').forEach(b => {
       }
     });
   });
+
+  // Smart open: si es Android/iOS intentamos abrir la app de Mercado Pago
+  // instalada; si no esta, caemos a la web.
+  const mpBtn = document.getElementById('gift-mp-btn');
+  const mpText = document.getElementById('gift-mp-text');
+  const mpHint = document.getElementById('gift-mp-hint');
+  if (mpBtn) {
+    const ua = navigator.userAgent || '';
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const webUrl = 'https://www.mercadopago.com.ar/';
+
+    if (isAndroid || isIOS) {
+      mpText.textContent = 'Abrir app de Mercado Pago';
+      mpHint.style.display = 'block';
+      mpHint.textContent = 'Si no la tenés instalada, te abrimos la web automáticamente.';
+    }
+
+    mpBtn.addEventListener('click', e => {
+      if (!isAndroid && !isIOS) return; // desktop: deja el href default
+      e.preventDefault();
+
+      if (isAndroid) {
+        // Intent URI con fallback automatico a la web (Chrome/Samsung Internet/etc).
+        // Si la app esta instalada -> abre la app.
+        // Si no -> el browser navega al browser_fallback_url.
+        const intentUrl =
+          'intent://www.mercadopago.com.ar/#Intent;scheme=https;' +
+          'package=com.mercadopago.wallet;' +
+          'S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
+        window.location.href = intentUrl;
+        return;
+      }
+
+      // iOS: intentamos el custom scheme y, si la pagina sigue visible despues
+      // de un timeout, asumimos que la app no esta y vamos a la web.
+      let appOpened = false;
+      const onHide = () => { appOpened = true; };
+      document.addEventListener('visibilitychange', onHide, { once: true });
+      window.addEventListener('pagehide', onHide, { once: true });
+
+      const t0 = Date.now();
+      window.location.href = 'mercadopago://';
+
+      setTimeout(() => {
+        document.removeEventListener('visibilitychange', onHide);
+        window.removeEventListener('pagehide', onHide);
+        const stillHere = !appOpened && document.visibilityState === 'visible';
+        const elapsed = Date.now() - t0;
+        if (stillHere && elapsed < 2500) {
+          window.open(webUrl, '_blank', 'noopener');
+        }
+      }, 1400);
+    });
+  }
 })();
 
 // ===== Init =====
