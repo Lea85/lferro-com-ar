@@ -1,5 +1,5 @@
 // =============================================================
-// uniq+ · App pública (catálogo + flujo de reserva)
+// uniq+ · App pública (catálogo + flujo de reserva + contacto)
 // =============================================================
 
 const state = {
@@ -7,15 +7,29 @@ const state = {
   selServicio: null,
   selFecha: null,
   selHora: null,
-  turnosDelDia: []   // turnos ya reservados para selServicio + selFecha
+  turnosDelDia: [],
+  horariosSemana: defaultHorariosSemana(),
+  contacto: {}
 };
 
 // ---------- Bootstrap ----------
 (async function bootstrap() {
   try {
-    state.servicios = await API.listarServicios();
+    // En paralelo: servicios + config pública (horarios + contacto)
+    const [servicios, config] = await Promise.all([
+      API.listarServicios(),
+      API.getConfigPublica().catch(err => {
+        console.warn('No se pudo cargar configuración pública, uso defaults:', err);
+        return { horarios_semana: {}, contacto: {} };
+      })
+    ]);
+    state.servicios = servicios;
+    state.horariosSemana = mergeHorarios(config.horarios_semana);
+    state.contacto = config.contacto || {};
+
     renderServiciosLanding();
     renderServiciosBooking();
+    renderContacto();
     setupForm();
     setupOkModal();
   } catch (err) {
@@ -25,6 +39,21 @@ const state = {
     toast(err.message, 'err');
   }
 })();
+
+function mergeHorarios(raw) {
+  const def = defaultHorariosSemana();
+  if (!raw || typeof raw !== 'object') return def;
+  WEEK_KEYS.forEach(k => {
+    if (raw[k] && typeof raw[k] === 'object') {
+      def[k] = {
+        abierto:  raw[k].abierto !== false && raw[k].abierto !== 'false',
+        apertura: (raw[k].apertura || def[k].apertura).slice(0, 5),
+        cierre:   (raw[k].cierre   || def[k].cierre).slice(0, 5)
+      };
+    }
+  });
+  return def;
+}
 
 // ---------- Servicios (landing) ----------
 function renderServiciosLanding() {
@@ -55,7 +84,6 @@ function renderServiciosLanding() {
   root.querySelectorAll('[data-pre-select]').forEach(a => {
     a.addEventListener('click', () => {
       const id = a.dataset.preSelect;
-      // Pre-selecciona el servicio en el flujo de reserva
       setTimeout(() => selectServicio(id), 250);
     });
   });
@@ -81,10 +109,8 @@ function renderServiciosBooking() {
     b.addEventListener('click', () => selectServicio(b.dataset.id));
   });
 
-  // Setup del input de fecha
   const fechaInput = document.getElementById('bk-fecha');
   fechaInput.min = todayIso();
-  // 90 días en el futuro
   const max = new Date();
   max.setDate(max.getDate() + 90);
   fechaInput.max = `${max.getFullYear()}-${pad(max.getMonth()+1)}-${pad(max.getDate())}`;
@@ -106,7 +132,6 @@ function selectServicio(id) {
   document.getElementById('step-datos').classList.add('disabled');
   document.getElementById('bk-slots').innerHTML = `<div class="hint">Elegí un día.</div>`;
 
-  // Si ya había una fecha elegida, recargo los slots con el nuevo servicio
   if (state.selFecha) selectFecha(state.selFecha);
 }
 
@@ -119,8 +144,16 @@ async function selectFecha(fechaIso) {
   document.getElementById('step-datos').classList.add('disabled');
 
   const slotsRoot = document.getElementById('bk-slots');
-  slotsRoot.innerHTML = `<div class="hint">Cargando disponibilidad…</div>`;
 
+  // Validar día abierto en el cliente para feedback inmediato
+  const diaKey = diaKeyFromIso(fechaIso);
+  const cfgDia = state.horariosSemana[diaKey];
+  if (!cfgDia || !cfgDia.abierto) {
+    slotsRoot.innerHTML = `<div class="hint hint-warn">El salón no abre los <b>${WEEK_LABELS[diaKey].toLowerCase()}</b>. Probá otro día.</div>`;
+    return;
+  }
+
+  slotsRoot.innerHTML = `<div class="hint">Cargando disponibilidad…</div>`;
   try {
     const turnos = await API.turnosDelDia(fechaIso, state.selServicio.id);
     state.turnosDelDia = turnos;
@@ -135,13 +168,16 @@ function renderSlots() {
   const s = state.selServicio;
   if (!s || !state.selFecha) return;
 
-  // Generamos slots cada `duracion_min` desde apertura hasta cierre.
-  // Como el horario lo controla settings (default 09-20), lo dejamos hardcoded
-  // del lado del cliente con ese default. La RPC valida server-side igual.
-  const apertura = '09:00';
-  const cierre   = '20:00';
+  const diaKey  = diaKeyFromIso(state.selFecha);
+  const cfgDia  = state.horariosSemana[diaKey];
+  if (!cfgDia || !cfgDia.abierto) {
+    slotsRoot.innerHTML = `<div class="hint hint-warn">El salón no abre los <b>${WEEK_LABELS[diaKey].toLowerCase()}</b>.</div>`;
+    return;
+  }
+  const apertura = cfgDia.apertura;
+  const cierre   = cfgDia.cierre;
   const duracion = s.duracion_min;
-  const cap = s.capacidad;
+  const cap      = s.capacidad;
 
   const slots = [];
   let cur = apertura;
@@ -153,20 +189,16 @@ function renderSlots() {
   }
 
   if (slots.length === 0) {
-    slotsRoot.innerHTML = `<div class="hint">No hay slots disponibles para este servicio.</div>`;
+    slotsRoot.innerHTML = `<div class="hint">No hay slots disponibles para este servicio en el horario de ese día (${apertura} – ${cierre}).</div>`;
     return;
   }
 
-  // Por cada slot, contamos cuántos turnos del servicio elegido se solapan.
-  // Como nuestros slots son discretos y todos del mismo tamaño, basta con
-  // matchear hora_inicio contra el slot.
   const today = todayIso();
   const now = nowHm();
 
   slotsRoot.innerHTML = slots.map(hi => {
     const hf = addMinutesToHm(hi, duracion);
     const reserved = state.turnosDelDia.filter(t => {
-      // Solapamiento: t.hora_inicio < hf  &&  t.hora_fin > hi
       const ti = (t.hora_inicio || '').slice(0, 5);
       const tf = (t.hora_fin || '').slice(0, 5);
       return ti < hf && tf > hi;
@@ -197,7 +229,6 @@ function renderSlots() {
       renderSlots();
       document.getElementById('step-datos').classList.remove('disabled');
       renderResumen();
-      // Scroll suave al form
       document.getElementById('bk-nombre').focus({ preventScroll: false });
     });
   });
@@ -250,7 +281,6 @@ function setupForm() {
         hora_inicio:    state.selHora,
         notas
       });
-      // Mostrar modal de OK
       const okText = document.getElementById('ok-text');
       okText.innerHTML = `
         Te esperamos para tu turno de <b>${escapeHtml(state.selServicio.nombre)}</b><br/>
@@ -258,10 +288,8 @@ function setupForm() {
         Si necesitás cancelar o reprogramar, llamanos al teléfono del salón.
       `;
       openOkModal();
-      // Reset suave
       document.getElementById('bk-form').reset();
       state.selHora = null;
-      // Recargar disponibilidad
       const turnos = await API.turnosDelDia(state.selFecha, state.selServicio.id);
       state.turnosDelDia = turnos;
       renderSlots();
@@ -272,9 +300,126 @@ function setupForm() {
       err.textContent = ex.message || 'No se pudo reservar el turno';
     } finally {
       submit.disabled = false;
-      submit.textContent = '✨ Confirmar mi turno';
+      submit.textContent = 'Confirmar mi turno';
     }
   });
+}
+
+// ---------- Contacto ----------
+function renderContacto() {
+  const c = state.contacto || {};
+  const direccion = (c.direccion || '').trim();
+  const telVis    = (c.telefono  || '').trim();
+  const waNum     = onlyDigits(c.wa_numero || c.telefono || '');
+  const email     = (c.email     || '').trim();
+  const mapaQ     = (c.mapa_query || direccion || '').trim();
+
+  // Dirección (link a Google Maps)
+  const dirA = document.getElementById('ct-direccion');
+  if (direccion) {
+    dirA.textContent = direccion;
+    dirA.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion)}`;
+    showRow('ct-row-direccion', true);
+  } else {
+    showRow('ct-row-direccion', false);
+  }
+
+  // Teléfono → WhatsApp
+  const telA = document.getElementById('ct-telefono');
+  if (telVis || waNum) {
+    telA.textContent = telVis || ('+' + waNum);
+    if (waNum) {
+      telA.href = `https://wa.me/${waNum}?text=${encodeURIComponent('Hola uniq+, quisiera consultar por un turno.')}`;
+    } else {
+      telA.href = '#';
+      telA.removeAttribute('target');
+    }
+    showRow('ct-row-telefono', true);
+  } else {
+    showRow('ct-row-telefono', false);
+  }
+
+  // Email
+  const mailA = document.getElementById('ct-email');
+  if (email) {
+    mailA.textContent = email;
+    mailA.href = 'mailto:' + email;
+    showRow('ct-row-email', true);
+  } else {
+    showRow('ct-row-email', false);
+  }
+
+  // Horario semanal compactado
+  const horarioEl = document.getElementById('ct-horario');
+  horarioEl.innerHTML = horarioCompactoHtml(state.horariosSemana);
+
+  // Redes sociales
+  const redesEl = document.getElementById('ct-redes');
+  const redes = [];
+  if (c.instagram) redes.push({ label: 'Instagram', icon: 'IG', url: ensureUrl(c.instagram, 'https://instagram.com/') });
+  if (c.facebook)  redes.push({ label: 'Facebook',  icon: 'FB', url: ensureUrl(c.facebook,  'https://facebook.com/')  });
+  if (c.tiktok)    redes.push({ label: 'TikTok',    icon: 'TT', url: ensureUrl(c.tiktok,    'https://tiktok.com/@')   });
+  if (redes.length) {
+    redesEl.innerHTML = redes.map(r =>
+      `<a href="${escapeAttr(r.url)}" target="_blank" rel="noopener" class="red-pill" aria-label="${r.label}">
+         <span class="red-ico">${r.icon}</span><span>${r.label}</span>
+       </a>`).join('');
+    redesEl.style.display = '';
+  } else {
+    redesEl.innerHTML = '';
+    redesEl.style.display = 'none';
+  }
+
+  // Mapa
+  const mapEl = document.getElementById('ct-map');
+  const mapCard = document.getElementById('ct-map-card');
+  if (mapaQ) {
+    mapEl.src = `https://www.google.com/maps?q=${encodeURIComponent(mapaQ)}&output=embed`;
+    mapCard.style.display = '';
+  } else {
+    mapEl.src = 'about:blank';
+    mapCard.style.display = 'none';
+  }
+}
+
+function showRow(id, visible) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = visible ? '' : 'none';
+}
+function onlyDigits(s) { return String(s || '').replace(/\D+/g, ''); }
+function ensureUrl(s, base) {
+  s = String(s || '').trim();
+  if (!s) return '';
+  if (/^https?:\/\//i.test(s)) return s;
+  return base + s.replace(/^@/, '');
+}
+function escapeAttr(s) { return escapeHtml(s).replace(/`/g, '&#96;'); }
+
+// Devuelve algo como: "Lun a Vie · 9:00 a 20:00 — Sáb · 10:00 a 18:00 — Dom: cerrado"
+function horarioCompactoHtml(horarios) {
+  // Agrupamos días consecutivos con el mismo horario / cerrado.
+  const groups = [];
+  let curr = null;
+  WEEK_KEYS.forEach(k => {
+    const d = horarios[k] || { abierto: false };
+    const sig = d.abierto ? `${d.apertura}-${d.cierre}` : 'CERRADO';
+    if (curr && curr.sig === sig) {
+      curr.end = k;
+    } else {
+      curr = { sig, start: k, end: k };
+      groups.push(curr);
+    }
+  });
+
+  return groups.map(g => {
+    const lbl = g.start === g.end
+      ? WEEK_LABELS[g.start].slice(0,3)
+      : `${WEEK_LABELS[g.start].slice(0,3)} a ${WEEK_LABELS[g.end].slice(0,3)}`;
+    if (g.sig === 'CERRADO') return `<span class="ho-grp ho-closed">${lbl}: cerrado</span>`;
+    const [ap, ci] = g.sig.split('-');
+    return `<span class="ho-grp">${lbl} · ${ap} a ${ci}</span>`;
+  }).join('<br/>');
 }
 
 // ---------- OK Modal ----------

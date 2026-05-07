@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%90%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="../styles.css?v=1" />
-  <link rel="stylesheet" href="admin.css?v=1" />
+  <link rel="icon" href="../assets/logo.png" />
+  <link rel="stylesheet" href="../styles.css?v=2" />
+  <link rel="stylesheet" href="admin.css?v=2" />
 </head>
 <body>
 
@@ -19,8 +19,8 @@
     <div class="wrap header-row">
       <a href="/uniqmas/" class="back" title="Volver al sitio">←</a>
       <a href="/uniqmas/" class="brand">
-        <span class="brand-logo">🔐</span>
-        <span class="brand-name">uniq<span class="brand-plus">+</span> · admin</span>
+        <img src="../assets/logo.png" alt="uniq positivo" class="brand-logo-img" />
+        <span class="brand-admin-tag">admin</span>
       </a>
       <div class="nav" id="adm-nav" style="display:none;">
         <button type="button" class="tab active" data-tab="agenda">Agenda</button>
@@ -82,7 +82,7 @@
       <!-- ===== Tab: Servicios ===== -->
       <section class="adm-tab hidden" id="tab-servicios">
         <h2>Servicios</h2>
-        <p class="sub">Cambiá la duración, capacidad y demás datos. Los cambios se aplican a los próximos turnos.</p>
+        <p class="sub">Activá / desactivá cada servicio con el switch o tocá <b>Editar</b> para cambiar duración, capacidad y precios. Los cambios se ven en la web al instante.</p>
         <div id="serv-root" class="serv-grid">
           <div class="loading-card">Cargando…</div>
         </div>
@@ -91,17 +91,51 @@
       <!-- ===== Tab: Ajustes ===== -->
       <section class="adm-tab hidden" id="tab-ajustes">
         <h2>Ajustes generales</h2>
+
         <div class="adm-card">
-          <h3>Horario de atención</h3>
-          <p class="sub">Determina los slots posibles del día.</p>
-          <div class="setting-row">
-            <label>Apertura
-              <input type="time" id="set-apertura" />
+          <h3>Horario por día de la semana</h3>
+          <p class="sub">Tildá los días que abrís y definí horario para cada uno. Los días destildados no aceptan reservas.</p>
+          <div class="week-grid" id="week-grid">
+            <!-- Rows generadas por JS -->
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+            <button class="btn btn-primary" id="set-week-save" type="button">Guardar horarios</button>
+          </div>
+        </div>
+
+        <div class="adm-card">
+          <h3>Datos de contacto</h3>
+          <p class="sub">Estos datos se muestran en la sección <b>Contacto</b> de la web pública. El teléfono se transforma en un link a WhatsApp.</p>
+          <div class="contact-grid">
+            <label>Dirección
+              <input type="text" id="ct-set-direccion" maxlength="160" placeholder="Av. Siempreviva 742, Ciudad" />
+              <small class="hint">Se usa también para el mapa de Google.</small>
             </label>
-            <label>Cierre
-              <input type="time" id="set-cierre" />
+            <label>Teléfono visible
+              <input type="text" id="ct-set-telefono" maxlength="40" placeholder="+54 11 5555 5555" />
             </label>
-            <button class="btn btn-primary" id="set-horarios-save" type="button">Guardar</button>
+            <label>Número de WhatsApp (con código de país, sin espacios ni +)
+              <input type="text" id="ct-set-wa" maxlength="20" placeholder="5491155555555" />
+              <small class="hint">Ejemplo Argentina: 549 + área + número, ej. 5491155551234</small>
+            </label>
+            <label>Email
+              <input type="email" id="ct-set-email" maxlength="120" placeholder="hola@uniqpositivo.com" />
+            </label>
+            <label class="full">Dirección personalizada para el mapa (opcional)
+              <input type="text" id="ct-set-mapa" maxlength="200" placeholder="Si está vacío, usa la dirección de arriba" />
+            </label>
+            <label>Instagram (usuario o URL)
+              <input type="text" id="ct-set-ig" maxlength="120" placeholder="uniqpositivo" />
+            </label>
+            <label>Facebook (usuario o URL)
+              <input type="text" id="ct-set-fb" maxlength="120" placeholder="uniqpositivo" />
+            </label>
+            <label>TikTok (usuario o URL)
+              <input type="text" id="ct-set-tt" maxlength="120" placeholder="uniqpositivo" />
+            </label>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+            <button class="btn btn-primary" id="set-contacto-save" type="button">Guardar contacto</button>
           </div>
         </div>
 
@@ -150,7 +184,7 @@
         <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;">
           <button type="button" class="btn btn-ghost" id="tm-cancel">Cerrar</button>
           <div style="display:flex;gap:10px;">
-            <button type="button" class="btn" id="tm-cancelar" style="background:#fde8e8;color:var(--danger);">🗑 Cancelar turno</button>
+            <button type="button" class="btn" id="tm-cancelar" style="background:#3a1d1d;color:#ffb3b3;border:1px solid #5a2a2a;">🗑 Cancelar turno</button>
             <button type="submit" class="btn btn-primary">Guardar cambios</button>
           </div>
         </div>
@@ -199,8 +233,8 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../assets/config.js?v=1"></script>
-  <script src="../assets/lib.js?v=1"></script>
-  <script src="admin.js?v=1"></script>
+  <script src="../assets/config.js?v=2"></script>
+  <script src="../assets/lib.js?v=2"></script>
+  <script src="admin.js?v=2"></script>
 </body>
 </html>

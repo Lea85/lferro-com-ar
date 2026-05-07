@@ -260,14 +260,20 @@ function renderServiciosAdmin() {
   }
   root.innerHTML = adm.servicios.map(s => `
     <div class="serv-card ${s.activo ? '' : 'inactivo'}">
-      <div class="serv-emoji">${s.emoji}</div>
+      <div class="serv-card-head">
+        <div class="serv-emoji">${s.emoji}</div>
+        <label class="switch" title="Activar / desactivar">
+          <input type="checkbox" data-toggle-serv="${s.id}" ${s.activo ? 'checked' : ''}>
+          <span class="switch-slider"></span>
+          <span class="switch-label">${s.activo ? 'activo' : 'inactivo'}</span>
+        </label>
+      </div>
       <h3>${escapeHtml(s.nombre)}</h3>
       <div class="serv-desc">${escapeHtml(s.descripcion || '')}</div>
       <div class="serv-meta">
         <span class="pill">⏱ ${s.duracion_min} min</span>
         <span class="pill">${s.capacidad > 1 ? '👥 ' + s.capacidad + ' simultáneos' : '🔒 1 a la vez'}</span>
         ${(s.precio_min || s.precio_max) ? `<span class="pill gold">💰 ${fmtMoney(s.precio_min || 0)}${s.precio_max && s.precio_max !== s.precio_min ? ' – ' + fmtMoney(s.precio_max) : ''}</span>` : ''}
-        ${!s.activo ? `<span class="pill" style="background:#fde8e8;color:var(--danger);">inactivo</span>` : ''}
       </div>
       <div class="serv-actions">
         <button class="btn btn-primary" type="button" data-edit-serv="${s.id}">Editar</button>
@@ -277,6 +283,33 @@ function renderServiciosAdmin() {
   root.querySelectorAll('[data-edit-serv]').forEach(b => {
     b.addEventListener('click', () => openServicioModal(b.dataset.editServ));
   });
+  root.querySelectorAll('[data-toggle-serv]').forEach(c => {
+    c.addEventListener('change', () => toggleServicioActivo(c.dataset.toggleServ, c.checked));
+  });
+}
+
+async function toggleServicioActivo(id, activo) {
+  const s = adm.servicios.find(x => x.id === id);
+  if (!s) return;
+  try {
+    const updated = await API.adminActualizarServicio(adm.secret, id, {
+      nombre:       s.nombre,
+      emoji:        s.emoji,
+      descripcion:  s.descripcion,
+      duracion_min: s.duracion_min,
+      capacidad:    s.capacidad,
+      precio_min:   s.precio_min,
+      precio_max:   s.precio_max,
+      activo
+    });
+    const idx = adm.servicios.findIndex(x => x.id === id);
+    if (idx >= 0) adm.servicios[idx] = updated;
+    toast(`Servicio ${activo ? 'activado' : 'desactivado'} ✓`, 'ok');
+    renderServiciosAdmin();
+  } catch (err) {
+    toast(err.message, 'err');
+    renderServiciosAdmin();
+  }
 }
 
 function setupServicioModal() {
@@ -334,21 +367,94 @@ function openServicioModal(id) {
 async function loadAjustes() {
   try {
     adm.settings = await API.adminGetSettings(adm.secret);
-    document.getElementById('set-apertura').value = adm.settings['horario_apertura'] || '09:00';
-    document.getElementById('set-cierre').value   = adm.settings['horario_cierre']   || '20:00';
-  } catch (err) { toast(err.message, 'err'); }
+  } catch (err) { toast(err.message, 'err'); return; }
 
-  document.getElementById('set-horarios-save').onclick = async () => {
-    const apertura = document.getElementById('set-apertura').value;
-    const cierre   = document.getElementById('set-cierre').value;
-    if (!apertura || !cierre || cierre <= apertura) { toast('Horarios inválidos', 'err'); return; }
+  // ----- Horarios por día de la semana -----
+  let horarios;
+  try {
+    horarios = JSON.parse(adm.settings['horarios_semana'] || 'null') || defaultHorariosSemana();
+  } catch { horarios = defaultHorariosSemana(); }
+  // merge con defaults para asegurar todas las claves
+  const def = defaultHorariosSemana();
+  WEEK_KEYS.forEach(k => {
+    if (!horarios[k] || typeof horarios[k] !== 'object') horarios[k] = def[k];
+    horarios[k].apertura = (horarios[k].apertura || '09:00').slice(0, 5);
+    horarios[k].cierre   = (horarios[k].cierre   || '20:00').slice(0, 5);
+    horarios[k].abierto  = horarios[k].abierto !== false && horarios[k].abierto !== 'false';
+  });
+
+  const wg = document.getElementById('week-grid');
+  wg.innerHTML = WEEK_KEYS.map(k => `
+    <div class="week-row ${horarios[k].abierto ? '' : 'closed'}" data-day="${k}">
+      <label class="week-toggle">
+        <input type="checkbox" data-week-open ${horarios[k].abierto ? 'checked' : ''}>
+        <span class="week-day">${WEEK_LABELS[k]}</span>
+      </label>
+      <div class="week-times">
+        <input type="time" data-week-from value="${horarios[k].apertura}" ${horarios[k].abierto ? '' : 'disabled'} />
+        <span class="sep">→</span>
+        <input type="time" data-week-to   value="${horarios[k].cierre}"   ${horarios[k].abierto ? '' : 'disabled'} />
+      </div>
+    </div>
+  `).join('');
+
+  wg.querySelectorAll('[data-week-open]').forEach(chk => {
+    chk.addEventListener('change', () => {
+      const row = chk.closest('.week-row');
+      const open = chk.checked;
+      row.classList.toggle('closed', !open);
+      row.querySelectorAll('input[type="time"]').forEach(i => i.disabled = !open);
+    });
+  });
+
+  document.getElementById('set-week-save').onclick = async () => {
+    const out = {};
+    let valid = true;
+    wg.querySelectorAll('.week-row').forEach(row => {
+      const k = row.dataset.day;
+      const open = row.querySelector('[data-week-open]').checked;
+      const from = row.querySelector('[data-week-from]').value || '09:00';
+      const to   = row.querySelector('[data-week-to]').value   || '20:00';
+      if (open && to <= from) valid = false;
+      out[k] = { abierto: open, apertura: from, cierre: to };
+    });
+    if (!valid) { toast('Hay días con cierre menor o igual a la apertura.', 'err'); return; }
     try {
-      await API.adminSetSetting(adm.secret, 'horario_apertura', apertura);
-      await API.adminSetSetting(adm.secret, 'horario_cierre', cierre);
+      await API.adminSetSetting(adm.secret, 'horarios_semana', JSON.stringify(out));
       toast('Horarios guardados ✓', 'ok');
     } catch (err) { toast(err.message, 'err'); }
   };
 
+  // ----- Datos de contacto -----
+  let contacto = {};
+  try { contacto = JSON.parse(adm.settings['contacto'] || '{}') || {}; } catch { contacto = {}; }
+  document.getElementById('ct-set-direccion').value = contacto.direccion  || '';
+  document.getElementById('ct-set-telefono').value  = contacto.telefono   || '';
+  document.getElementById('ct-set-wa').value        = contacto.wa_numero  || '';
+  document.getElementById('ct-set-email').value     = contacto.email      || '';
+  document.getElementById('ct-set-mapa').value      = contacto.mapa_query || '';
+  document.getElementById('ct-set-ig').value        = contacto.instagram  || '';
+  document.getElementById('ct-set-fb').value        = contacto.facebook   || '';
+  document.getElementById('ct-set-tt').value        = contacto.tiktok     || '';
+
+  document.getElementById('set-contacto-save').onclick = async () => {
+    const out = {
+      direccion:  document.getElementById('ct-set-direccion').value.trim(),
+      telefono:   document.getElementById('ct-set-telefono').value.trim(),
+      wa_numero:  String(document.getElementById('ct-set-wa').value || '').replace(/\D+/g, ''),
+      email:      document.getElementById('ct-set-email').value.trim(),
+      mapa_query: document.getElementById('ct-set-mapa').value.trim(),
+      instagram:  document.getElementById('ct-set-ig').value.trim(),
+      facebook:   document.getElementById('ct-set-fb').value.trim(),
+      tiktok:     document.getElementById('ct-set-tt').value.trim()
+    };
+    try {
+      await API.adminSetSetting(adm.secret, 'contacto', JSON.stringify(out));
+      toast('Contacto guardado ✓', 'ok');
+    } catch (err) { toast(err.message, 'err'); }
+  };
+
+  // ----- Cambiar contraseña -----
   document.getElementById('set-pass-save').onclick = async () => {
     const np = document.getElementById('set-newpass').value;
     if (!np || np.length < 4) { toast('Mínimo 4 caracteres', 'err'); return; }

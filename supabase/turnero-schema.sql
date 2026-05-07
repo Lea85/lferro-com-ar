@@ -78,8 +78,10 @@ create table if not exists public.turnero_settings (
 -- =============================================================
 insert into public.turnero_settings(key, value) values
   ('admin_secret',     'admin'),
-  ('horario_apertura', '09:00'),
-  ('horario_cierre',   '20:00')
+  ('horario_apertura', '09:00'),  -- legacy (fallback)
+  ('horario_cierre',   '20:00'),  -- legacy (fallback)
+  ('horarios_semana',  '{"lun":{"abierto":true,"apertura":"09:00","cierre":"20:00"},"mar":{"abierto":true,"apertura":"09:00","cierre":"20:00"},"mie":{"abierto":true,"apertura":"09:00","cierre":"20:00"},"jue":{"abierto":true,"apertura":"09:00","cierre":"20:00"},"vie":{"abierto":true,"apertura":"09:00","cierre":"20:00"},"sab":{"abierto":true,"apertura":"10:00","cierre":"18:00"},"dom":{"abierto":false,"apertura":"09:00","cierre":"20:00"}}'),
+  ('contacto',         '{"direccion":"Av. Siempreviva 742, Ciudad","telefono":"+54 11 5555 5555","wa_numero":"5491155555555","email":"hola@uniqpositivo.com","instagram":"","facebook":"","tiktok":"","mapa_query":"Av. Siempreviva 742, Ciudad"}')
 on conflict (key) do nothing;
 
 insert into public.turnero_servicios
@@ -117,6 +119,16 @@ create trigger turnero_turnos_touch
   for each row execute function public.turnero_touch_updated_at();
 
 -- =============================================================
+-- HELPER: día de la semana → key corta (lun, mar, ...)
+-- =============================================================
+create or replace function public._turnero_dia_key(p_fecha date)
+returns text language sql immutable as $$
+  select case extract(dow from p_fecha)::int
+    when 0 then 'dom' when 1 then 'lun' when 2 then 'mar' when 3 then 'mie'
+    when 4 then 'jue' when 5 then 'vie' when 6 then 'sab' end;
+$$;
+
+-- =============================================================
 -- HELPER: validar admin
 -- =============================================================
 create or replace function public._turnero_validate_admin(p_secret text)
@@ -150,6 +162,22 @@ create policy turnero_servicios_read
 -- (No agregamos policies → SELECT/INSERT/UPDATE/DELETE quedan bloqueados)
 
 -- Settings: NO se permite acceso directo (todo via RPCs).
+
+-- =============================================================
+-- RPC público: obtener configuración pública (horarios + contacto)
+-- Devuelve dos JSON: horarios de la semana y datos de contacto.
+-- =============================================================
+create or replace function public.obtener_config_publica()
+returns table(horarios_semana jsonb, contacto jsonb)
+language sql stable security definer set search_path = public as $$
+  select
+    coalesce((select value::jsonb from public.turnero_settings where key = 'horarios_semana'),
+             '{}'::jsonb) as horarios_semana,
+    coalesce((select value::jsonb from public.turnero_settings where key = 'contacto'),
+             '{}'::jsonb) as contacto;
+$$;
+
+grant execute on function public.obtener_config_publica() to anon, authenticated;
 
 -- =============================================================
 -- RPC: obtener turnos del día (público, sin datos personales)
@@ -215,17 +243,32 @@ begin
 
   v_fin := (p_hora_inicio + (v_serv.duracion_min * interval '1 minute'))::time;
 
-  -- Validar contra horario de apertura/cierre
+  -- Validar contra horario del día de la semana (config en horarios_semana)
+  -- Fallback a settings legacy (horario_apertura/cierre) si no está configurado.
   declare
+    v_dia_key  text := public._turnero_dia_key(p_fecha);
+    v_dia_cfg  jsonb;
     v_apertura time;
     v_cierre   time;
   begin
-    select value::time into v_apertura from public.turnero_settings where key = 'horario_apertura';
-    select value::time into v_cierre   from public.turnero_settings where key = 'horario_cierre';
-    if v_apertura is null then v_apertura := '09:00'; end if;
-    if v_cierre   is null then v_cierre   := '20:00'; end if;
+    select (value::jsonb) -> v_dia_key into v_dia_cfg
+      from public.turnero_settings where key = 'horarios_semana';
+
+    if v_dia_cfg is not null then
+      if not coalesce((v_dia_cfg->>'abierto')::bool, false) then
+        raise exception 'El salón está cerrado ese día de la semana';
+      end if;
+      v_apertura := coalesce(nullif(v_dia_cfg->>'apertura','')::time, '09:00'::time);
+      v_cierre   := coalesce(nullif(v_dia_cfg->>'cierre','')::time,   '20:00'::time);
+    else
+      select value::time into v_apertura from public.turnero_settings where key = 'horario_apertura';
+      select value::time into v_cierre   from public.turnero_settings where key = 'horario_cierre';
+      if v_apertura is null then v_apertura := '09:00'; end if;
+      if v_cierre   is null then v_cierre   := '20:00'; end if;
+    end if;
+
     if p_hora_inicio < v_apertura or v_fin > v_cierre then
-      raise exception 'El turno debe estar entre % y %', v_apertura, v_cierre;
+      raise exception 'El turno debe estar entre % y % para ese día', v_apertura, v_cierre;
     end if;
   end;
 
@@ -474,4 +517,9 @@ grant execute on function public.admin_turnero_ping(text) to anon, authenticated
 --
 -- Para limpiar todos los turnos de prueba:
 --   delete from public.turnero_turnos;
+--
+-- Si ya corriste este script antes y querés solo agregar los settings
+-- nuevos (horarios_semana / contacto) y la función obtener_config_publica,
+-- volvé a correrlo: es idempotente (uses if not exists / on conflict /
+-- create or replace), no rompe los datos existentes.
 -- =============================================================

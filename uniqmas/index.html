@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
 
@@ -20,8 +20,7 @@
     <div class="wrap header-row">
       <a href="/" class="back" title="Volver al portafolio">←</a>
       <a href="#hero" class="brand">
-        <span class="brand-logo">✨</span>
-        <span class="brand-name">uniq<span class="brand-plus">+</span></span>
+        <img src="assets/logo.png" alt="uniq positivo" class="brand-logo-img" />
       </a>
       <nav class="nav">
         <a href="#servicios">Servicios</a>
@@ -43,7 +42,7 @@
           Sin crear cuenta, sin llamadas. Elegí el día y la hora, y nos vemos.
         </p>
         <div class="hero-actions">
-          <a href="#reservar" class="btn btn-primary">✨ Reservar mi turno</a>
+          <a href="#reservar" class="btn btn-primary">Reservar mi turno</a>
           <a href="#servicios" class="btn btn-ghost">Ver servicios</a>
         </div>
         <div class="hero-tags">
@@ -54,12 +53,7 @@
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="hero-orb"></div>
-        <div class="hero-emoji">💆</div>
-        <div class="hero-card">
-          <span>✂️</span>
-          <span>💅</span>
-          <span>💆</span>
-        </div>
+        <img src="assets/logo.png" alt="" class="hero-logo" />
       </div>
     </div>
   </section>
@@ -73,7 +67,6 @@
         <p>Tres experiencias, un solo lugar. Profesionales con años de oficio y productos premium.</p>
       </div>
       <div id="services-grid" class="services-grid">
-        <!-- Cards renderizadas por JS desde turnero_servicios -->
         <div class="loading-card">Cargando servicios…</div>
       </div>
     </div>
@@ -90,7 +83,6 @@
 
       <div class="booking-card">
 
-        <!-- Step 1: servicio -->
         <div class="step" id="step-servicio">
           <div class="step-head">
             <span class="step-num">1</span>
@@ -101,7 +93,6 @@
           </div>
         </div>
 
-        <!-- Step 2: fecha -->
         <div class="step disabled" id="step-fecha">
           <div class="step-head">
             <span class="step-num">2</span>
@@ -111,7 +102,6 @@
           <div class="hint" id="bk-fecha-hint">Solo fechas desde hoy en adelante.</div>
         </div>
 
-        <!-- Step 3: hora -->
         <div class="step disabled" id="step-hora">
           <div class="step-head">
             <span class="step-num">3</span>
@@ -122,7 +112,6 @@
           </div>
         </div>
 
-        <!-- Step 4: datos -->
         <div class="step disabled" id="step-datos">
           <div class="step-head">
             <span class="step-num">4</span>
@@ -142,7 +131,7 @@
               <textarea id="bk-notas" maxlength="300" placeholder="Cualquier comentario que nos quieras dejar"></textarea>
             </label>
             <div class="resumen" id="bk-resumen"></div>
-            <button type="submit" class="btn btn-primary btn-big" id="bk-submit">✨ Confirmar mi turno</button>
+            <button type="submit" class="btn btn-primary btn-big" id="bk-submit">Confirmar mi turno</button>
             <div class="form-error" id="bk-error"></div>
           </form>
         </div>
@@ -159,18 +148,21 @@
         <h2>Visitanos.</h2>
         <p class="lead">Estamos cerca tuyo, esperando para mimarte.</p>
         <ul class="contacto-list">
-          <li><span class="ico">📍</span> Av. Siempreviva 742, Ciudad</li>
-          <li><span class="ico">📞</span> +54 11 5555 5555</li>
-          <li><span class="ico">📧</span> hola@uniqmas.com</li>
-          <li><span class="ico">🕒</span> Lun a Sáb · 9:00 a 20:00</li>
+          <li id="ct-row-direccion"><span class="ico">📍</span> <a id="ct-direccion" href="#" target="_blank" rel="noopener">—</a></li>
+          <li id="ct-row-telefono"><span class="ico">💬</span> <a id="ct-telefono" href="#" target="_blank" rel="noopener">—</a></li>
+          <li id="ct-row-email"><span class="ico">✉️</span> <a id="ct-email" href="#">—</a></li>
+          <li id="ct-row-horario" class="ct-horario"><span class="ico">🕒</span> <span id="ct-horario">—</span></li>
         </ul>
+        <div class="contacto-redes" id="ct-redes"></div>
       </div>
-      <div class="map-card">
-        <div class="map-emoji">🗺️</div>
-        <div>
-          <strong>Mapa próximamente</strong>
-          <p>Integramos Google Maps cuando definamos la dirección final.</p>
-        </div>
+      <div class="map-card" id="ct-map-card">
+        <iframe
+          id="ct-map"
+          title="Mapa de ubicación"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          src="about:blank"
+        ></iframe>
       </div>
     </div>
   </section>
@@ -182,13 +174,11 @@
     </div>
   </footer>
 
-  <!-- ===== Toast ===== -->
   <div class="toast" id="toast"></div>
 
-  <!-- ===== Modal de confirmación ===== -->
   <div id="ok-modal" class="ok-overlay hidden" role="dialog" aria-modal="true">
     <div class="ok-modal">
-      <div class="ok-emoji">✨</div>
+      <div class="ok-emoji">✓</div>
       <h2>¡Turno reservado!</h2>
       <div class="ok-text" id="ok-text"></div>
       <button class="btn btn-primary" id="ok-close" type="button">Listo</button>
@@ -196,8 +186,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/config.js?v=1"></script>
-  <script src="assets/lib.js?v=1"></script>
-  <script src="assets/app.js?v=1"></script>
+  <script src="assets/config.js?v=2"></script>
+  <script src="assets/lib.js?v=2"></script>
+  <script src="assets/app.js?v=2"></script>
 </body>
 </html>

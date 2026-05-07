@@ -34,6 +34,16 @@ const API = {
     return data || [];
   },
 
+  async getConfigPublica() {
+    const { data, error } = await sb.rpc('obtener_config_publica');
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      horarios_semana: (row && row.horarios_semana) || {},
+      contacto:        (row && row.contacto)        || {}
+    };
+  },
+
   async reservar(payload) {
     const { data, error } = await sb.rpc('reservar_turno', {
       p_servicio_id:    payload.servicio_id,
@@ -160,6 +170,26 @@ function addMinutesToHm(hm, minutes) {
   const nh = Math.floor(total / 60) % 24;
   const nm = total % 60;
   return `${pad(nh)}:${pad(nm)}`;
+}
+
+// Días de la semana (claves cortas usadas en horarios_semana)
+const WEEK_KEYS   = ['lun','mar','mie','jue','vie','sab','dom'];
+const WEEK_LABELS = {
+  lun:'Lunes', mar:'Martes', mie:'Miércoles', jue:'Jueves',
+  vie:'Viernes', sab:'Sábado', dom:'Domingo'
+};
+function diaKeyFromIso(iso) {
+  // 0=domingo … 6=sábado en JS; mapeamos a nuestra key.
+  const [y,m,d] = iso.split('-').map(Number);
+  const dow = new Date(y, m - 1, d).getDay();
+  return ['dom','lun','mar','mie','jue','vie','sab'][dow];
+}
+function defaultHorariosSemana() {
+  const def = {};
+  WEEK_KEYS.forEach(k => {
+    def[k] = { abierto: k !== 'dom', apertura: '09:00', cierre: '20:00' };
+  });
+  return def;
 }
 
 function toast(msg, type) {
