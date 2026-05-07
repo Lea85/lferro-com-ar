@@ -559,37 +559,43 @@ document.querySelectorAll('#filter button').forEach(b => {
       if (!isAndroid && !isIOS) return; // desktop: deja el href default
       e.preventDefault();
 
-      if (isAndroid) {
-        // Intent URI con fallback automatico a la web (Chrome/Samsung Internet/etc).
-        // Si la app esta instalada -> abre la app.
-        // Si no -> el browser navega al browser_fallback_url.
-        const intentUrl =
-          'intent://www.mercadopago.com.ar/#Intent;scheme=https;' +
-          'package=com.mercadopago.wallet;' +
-          'S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
-        window.location.href = intentUrl;
-        return;
-      }
-
-      // iOS: intentamos el custom scheme y, si la pagina sigue visible despues
-      // de un timeout, asumimos que la app no esta y vamos a la web.
+      // Detector universal: si el browser pierde foco asumimos que la app abrio
       let appOpened = false;
       const onHide = () => { appOpened = true; };
       document.addEventListener('visibilitychange', onHide, { once: true });
       window.addEventListener('pagehide', onHide, { once: true });
+      window.addEventListener('blur', onHide, { once: true });
 
       const t0 = Date.now();
-      window.location.href = 'mercadopago://';
 
+      if (isAndroid) {
+        // Intent URI con CUSTOM scheme (mercadopago://), no https.
+        // La app de MP registra el scheme 'mercadopago' para deep links;
+        // 'https' requiere App Links verificados que no aplican a la home.
+        // browser_fallback_url va a la web si la app no esta instalada.
+        const intentUrl =
+          'intent://open#Intent;scheme=mercadopago;' +
+          'package=com.mercadopago.wallet;' +
+          'S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
+        window.location.href = intentUrl;
+      } else {
+        // iOS: scheme custom directo
+        window.location.href = 'mercadopago://';
+      }
+
+      // Fallback de seguridad: si despues de 1.6s seguimos visibles
+      // (no se abrio la app y tampoco navegamos al fallback del intent),
+      // forzamos la web en una pestana nueva.
       setTimeout(() => {
         document.removeEventListener('visibilitychange', onHide);
         window.removeEventListener('pagehide', onHide);
+        window.removeEventListener('blur', onHide);
         const stillHere = !appOpened && document.visibilityState === 'visible';
         const elapsed = Date.now() - t0;
-        if (stillHere && elapsed < 2500) {
+        if (stillHere && elapsed < 3000) {
           window.open(webUrl, '_blank', 'noopener');
         }
-      }, 1400);
+      }, 1600);
     });
   }
 })();
