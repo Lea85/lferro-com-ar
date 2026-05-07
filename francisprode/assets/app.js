@@ -165,10 +165,15 @@ function renderHeader() {
 }
 
 function setStatus(kind, text) {
+  // La pastilla de estado fue removida del header; mantenemos la funcion como
+  // no-op defensiva para no romper llamadas existentes (y por si la
+  // re-introducimos en el futuro).
   const pill = document.getElementById('status-pill');
+  if (!pill) return;
   pill.classList.remove('ok', 'err');
   if (kind) pill.classList.add(kind);
-  document.getElementById('status-text').textContent = text;
+  const txt = document.getElementById('status-text');
+  if (txt) txt.textContent = text;
 }
 
 function renderName() {
@@ -488,6 +493,51 @@ document.querySelectorAll('#filter button').forEach(b => {
     renderBets();
   });
 });
+
+// ===== Modal "Hacele un regalo a Francisco" =====
+(function setupGiftModal() {
+  const btn = document.getElementById('gift-btn');
+  const overlay = document.getElementById('gift-modal');
+  const close = document.getElementById('gift-close');
+  if (!btn || !overlay) return;
+
+  function openModal() {
+    overlay.classList.remove('hidden');
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    overlay.classList.remove('show');
+    setTimeout(() => {
+      overlay.classList.add('hidden');
+      document.body.style.overflow = '';
+    }, 250);
+  }
+
+  btn.addEventListener('click', openModal);
+  close.addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.classList.contains('show')) closeModal();
+  });
+
+  // Copy-to-clipboard de los datos
+  overlay.querySelectorAll('.gift-copy').forEach(b => {
+    b.addEventListener('click', async () => {
+      const text = b.dataset.copy || '';
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = b.textContent;
+        b.textContent = '✓';
+        b.classList.add('copied');
+        showToast(`Copiado: ${text}`, 'ok');
+        setTimeout(() => { b.textContent = original; b.classList.remove('copied'); }, 1500);
+      } catch {
+        showToast('No se pudo copiar al portapapeles', 'err');
+      }
+    });
+  });
+})();
 
 // ===== Init =====
 (async function init() {
