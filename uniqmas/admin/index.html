@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/uniqmas/admin/" />
+  <title>uniq+ · Panel admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%90%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../styles.css?v=1" />
+  <link rel="stylesheet" href="admin.css?v=1" />
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a href="/uniqmas/" class="back" title="Volver al sitio">←</a>
+      <a href="/uniqmas/" class="brand">
+        <span class="brand-logo">🔐</span>
+        <span class="brand-name">uniq<span class="brand-plus">+</span> · admin</span>
+      </a>
+      <div class="nav" id="adm-nav" style="display:none;">
+        <button type="button" class="tab active" data-tab="agenda">Agenda</button>
+        <button type="button" class="tab" data-tab="servicios">Servicios</button>
+        <button type="button" class="tab" data-tab="ajustes">Ajustes</button>
+      </div>
+      <button type="button" class="btn btn-ghost" id="adm-logout" style="display:none;">Salir</button>
+    </div>
+  </header>
+
+  <!-- ===== Login admin ===== -->
+  <section id="adm-login-wrap" class="booking">
+    <div class="wrap">
+      <div class="booking-card" style="max-width:420px;">
+        <h2 style="text-align:center;">Acceso restringido</h2>
+        <p style="text-align:center;color:var(--ink-soft);">Ingresá usuario y contraseña.</p>
+        <form id="adm-login-form" class="datos-form" style="grid-template-columns:1fr;">
+          <label class="full">Usuario
+            <input type="text" id="adm-user" required autocomplete="username" placeholder="admin" />
+          </label>
+          <label class="full">Contraseña
+            <div style="position:relative;">
+              <input type="password" id="adm-pass" required autocomplete="current-password" placeholder="contraseña" style="padding-right:42px;" />
+              <button type="button" class="pwd-toggle" data-target="adm-pass" aria-label="Mostrar contraseña" title="Mostrar/ocultar">👁</button>
+            </div>
+          </label>
+          <button type="submit" class="btn btn-primary btn-big" id="adm-login-submit">Ingresar</button>
+          <div class="form-error" id="adm-login-err"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Panel ===== -->
+  <main id="adm-panel" class="hidden adm-panel">
+    <div class="wrap">
+
+      <!-- ===== Tab: Agenda ===== -->
+      <section class="adm-tab" id="tab-agenda">
+        <div class="adm-tab-head">
+          <div>
+            <h2>Agenda del día</h2>
+            <p class="sub">Vista cronológica de los turnos. Click en un turno para editar o cancelar.</p>
+          </div>
+          <div class="adm-tab-actions">
+            <button class="btn btn-ghost" id="agenda-prev" type="button" title="Día anterior">‹</button>
+            <input type="date" id="agenda-date" class="date-input" style="width:auto;" />
+            <button class="btn btn-ghost" id="agenda-next" type="button" title="Día siguiente">›</button>
+            <button class="btn btn-ghost" id="agenda-today" type="button">Hoy</button>
+            <button class="btn btn-ghost" id="agenda-refresh" type="button" title="Refrescar">⟳</button>
+          </div>
+        </div>
+        <div class="agenda-stats" id="agenda-stats"></div>
+        <div id="agenda-root" class="agenda-grid">
+          <div class="loading-card">Cargando…</div>
+        </div>
+      </section>
+
+      <!-- ===== Tab: Servicios ===== -->
+      <section class="adm-tab hidden" id="tab-servicios">
+        <h2>Servicios</h2>
+        <p class="sub">Cambiá la duración, capacidad y demás datos. Los cambios se aplican a los próximos turnos.</p>
+        <div id="serv-root" class="serv-grid">
+          <div class="loading-card">Cargando…</div>
+        </div>
+      </section>
+
+      <!-- ===== Tab: Ajustes ===== -->
+      <section class="adm-tab hidden" id="tab-ajustes">
+        <h2>Ajustes generales</h2>
+        <div class="adm-card">
+          <h3>Horario de atención</h3>
+          <p class="sub">Determina los slots posibles del día.</p>
+          <div class="setting-row">
+            <label>Apertura
+              <input type="time" id="set-apertura" />
+            </label>
+            <label>Cierre
+              <input type="time" id="set-cierre" />
+            </label>
+            <button class="btn btn-primary" id="set-horarios-save" type="button">Guardar</button>
+          </div>
+        </div>
+
+        <div class="adm-card">
+          <h3>Cambiar contraseña de admin</h3>
+          <p class="sub">Cambiala apenas puedas: la inicial es <code>admin</code>.</p>
+          <div class="setting-row">
+            <label>Nueva contraseña
+              <div style="position:relative;">
+                <input type="password" id="set-newpass" placeholder="Mínimo 4 caracteres" style="padding-right:42px;" />
+                <button type="button" class="pwd-toggle" data-target="set-newpass" aria-label="Mostrar">👁</button>
+              </div>
+            </label>
+            <button class="btn btn-primary" id="set-pass-save" type="button">Guardar</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ===== Modal de edición de turno ===== -->
+  <div id="turno-modal" class="ok-overlay hidden" role="dialog" aria-modal="true">
+    <div class="ok-modal" style="text-align:left;max-width:520px;">
+      <h2 style="text-align:center;">Editar turno</h2>
+      <form id="turno-form" class="datos-form">
+        <label class="full">Cliente
+          <input type="text" id="tm-nombre" required maxlength="80" />
+        </label>
+        <label>Teléfono
+          <input type="tel" id="tm-tel" maxlength="30" />
+        </label>
+        <label>Email
+          <input type="email" id="tm-email" maxlength="120" />
+        </label>
+        <label>Fecha
+          <input type="date" id="tm-fecha" required />
+        </label>
+        <label>Hora de inicio
+          <input type="time" id="tm-hora" required step="900" />
+        </label>
+        <label class="full">Notas
+          <textarea id="tm-notas" maxlength="300"></textarea>
+        </label>
+        <div class="form-error" id="tm-err"></div>
+        <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;">
+          <button type="button" class="btn btn-ghost" id="tm-cancel">Cerrar</button>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="btn" id="tm-cancelar" style="background:#fde8e8;color:var(--danger);">🗑 Cancelar turno</button>
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Modal edición de servicio ===== -->
+  <div id="serv-modal" class="ok-overlay hidden" role="dialog" aria-modal="true">
+    <div class="ok-modal" style="text-align:left;max-width:520px;">
+      <h2 style="text-align:center;" id="serv-modal-title">Editar servicio</h2>
+      <form id="serv-form" class="datos-form">
+        <label>Emoji
+          <input type="text" id="sf-emoji" maxlength="4" />
+        </label>
+        <label>Nombre
+          <input type="text" id="sf-nombre" required maxlength="60" />
+        </label>
+        <label class="full">Descripción
+          <textarea id="sf-desc" maxlength="300"></textarea>
+        </label>
+        <label>Duración (minutos)
+          <input type="number" id="sf-dur" required min="5" max="480" step="5" />
+        </label>
+        <label>Capacidad (simultáneos)
+          <input type="number" id="sf-cap" required min="1" max="20" />
+        </label>
+        <label>Precio mínimo ($)
+          <input type="number" id="sf-pmin" min="0" />
+        </label>
+        <label>Precio máximo ($)
+          <input type="number" id="sf-pmax" min="0" />
+        </label>
+        <label class="full" style="flex-direction:row;align-items:center;gap:10px;text-transform:none;letter-spacing:0;font-weight:500;">
+          <input type="checkbox" id="sf-activo" /> Activo (visible en la web)
+        </label>
+        <div class="form-error" id="sf-err"></div>
+        <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;">
+          <button type="button" class="btn btn-ghost" id="sf-cancel">Cerrar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../assets/config.js?v=1"></script>
+  <script src="../assets/lib.js?v=1"></script>
+  <script src="admin.js?v=1"></script>
+</body>
+</html>

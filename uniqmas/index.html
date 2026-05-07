@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/uniqmas/" />
+  <title>uniq+ · Salón de belleza · Reservá tu turno</title>
+  <meta name="description" content="uniq+ · Cortes de pelo, masajes y manicura. Reservá tu turno online sin necesidad de crear una cuenta." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css?v=1" />
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a href="/" class="back" title="Volver al portafolio">←</a>
+      <a href="#hero" class="brand">
+        <span class="brand-logo">✨</span>
+        <span class="brand-name">uniq<span class="brand-plus">+</span></span>
+      </a>
+      <nav class="nav">
+        <a href="#servicios">Servicios</a>
+        <a href="#reservar">Reservá</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <a href="#reservar" class="btn btn-primary btn-cta">Reservar turno</a>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero" id="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-text">
+        <span class="eyebrow">SALÓN DE BELLEZA</span>
+        <h1>Tu momento <em>uniq+</em>, sin esperas.</h1>
+        <p class="hero-sub">
+          Reservá online en segundos: corte de pelo, masajes relajantes y manicura.
+          Sin crear cuenta, sin llamadas. Elegí el día y la hora, y nos vemos.
+        </p>
+        <div class="hero-actions">
+          <a href="#reservar" class="btn btn-primary">✨ Reservar mi turno</a>
+          <a href="#servicios" class="btn btn-ghost">Ver servicios</a>
+        </div>
+        <div class="hero-tags">
+          <span>· Reserva en 30 segundos ·</span>
+          <span>· Confirmación inmediata ·</span>
+          <span>· Atención personalizada ·</span>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-orb"></div>
+        <div class="hero-emoji">💆</div>
+        <div class="hero-card">
+          <span>✂️</span>
+          <span>💅</span>
+          <span>💆</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Servicios ===== -->
+  <section class="services" id="servicios">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">NUESTROS SERVICIOS</span>
+        <h2>Cuidate como te merecés.</h2>
+        <p>Tres experiencias, un solo lugar. Profesionales con años de oficio y productos premium.</p>
+      </div>
+      <div id="services-grid" class="services-grid">
+        <!-- Cards renderizadas por JS desde turnero_servicios -->
+        <div class="loading-card">Cargando servicios…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Reservar ===== -->
+  <section class="booking" id="reservar">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">RESERVÁ TU TURNO</span>
+        <h2>3 pasos y listo.</h2>
+        <p>Elegí el servicio, la fecha y la hora. Te confirmamos al toque.</p>
+      </div>
+
+      <div class="booking-card">
+
+        <!-- Step 1: servicio -->
+        <div class="step" id="step-servicio">
+          <div class="step-head">
+            <span class="step-num">1</span>
+            <h3>Elegí el servicio</h3>
+          </div>
+          <div id="bk-services" class="chip-list">
+            <div class="loading-card small">Cargando…</div>
+          </div>
+        </div>
+
+        <!-- Step 2: fecha -->
+        <div class="step disabled" id="step-fecha">
+          <div class="step-head">
+            <span class="step-num">2</span>
+            <h3>Elegí el día</h3>
+          </div>
+          <input type="date" id="bk-fecha" class="date-input" />
+          <div class="hint" id="bk-fecha-hint">Solo fechas desde hoy en adelante.</div>
+        </div>
+
+        <!-- Step 3: hora -->
+        <div class="step disabled" id="step-hora">
+          <div class="step-head">
+            <span class="step-num">3</span>
+            <h3>Elegí la hora</h3>
+          </div>
+          <div id="bk-slots" class="slots">
+            <div class="hint">Primero elegí servicio y fecha.</div>
+          </div>
+        </div>
+
+        <!-- Step 4: datos -->
+        <div class="step disabled" id="step-datos">
+          <div class="step-head">
+            <span class="step-num">4</span>
+            <h3>Tus datos</h3>
+          </div>
+          <form id="bk-form" class="datos-form" autocomplete="on">
+            <label>Nombre completo*
+              <input type="text" id="bk-nombre" required maxlength="80" placeholder="Ej: Sofía García" />
+            </label>
+            <label>Teléfono (recomendado)
+              <input type="tel" id="bk-tel" maxlength="30" placeholder="11 5555 5555" />
+            </label>
+            <label>Email
+              <input type="email" id="bk-email" maxlength="120" placeholder="opcional" />
+            </label>
+            <label class="full">Notas / pedidos especiales
+              <textarea id="bk-notas" maxlength="300" placeholder="Cualquier comentario que nos quieras dejar"></textarea>
+            </label>
+            <div class="resumen" id="bk-resumen"></div>
+            <button type="submit" class="btn btn-primary btn-big" id="bk-submit">✨ Confirmar mi turno</button>
+            <div class="form-error" id="bk-error"></div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Contacto ===== -->
+  <section class="contacto" id="contacto">
+    <div class="wrap contacto-grid">
+      <div>
+        <span class="eyebrow">CONTACTO</span>
+        <h2>Visitanos.</h2>
+        <p class="lead">Estamos cerca tuyo, esperando para mimarte.</p>
+        <ul class="contacto-list">
+          <li><span class="ico">📍</span> Av. Siempreviva 742, Ciudad</li>
+          <li><span class="ico">📞</span> +54 11 5555 5555</li>
+          <li><span class="ico">📧</span> hola@uniqmas.com</li>
+          <li><span class="ico">🕒</span> Lun a Sáb · 9:00 a 20:00</li>
+        </ul>
+      </div>
+      <div class="map-card">
+        <div class="map-emoji">🗺️</div>
+        <div>
+          <strong>Mapa próximamente</strong>
+          <p>Integramos Google Maps cuando definamos la dirección final.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>© uniq+ — un proyecto de <a href="/">lferro.com.ar</a></span>
+      <a href="/uniqmas/admin/" class="admin-link">🔐 Admin</a>
+    </div>
+  </footer>
+
+  <!-- ===== Toast ===== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== Modal de confirmación ===== -->
+  <div id="ok-modal" class="ok-overlay hidden" role="dialog" aria-modal="true">
+    <div class="ok-modal">
+      <div class="ok-emoji">✨</div>
+      <h2>¡Turno reservado!</h2>
+      <div class="ok-text" id="ok-text"></div>
+      <button class="btn btn-primary" id="ok-close" type="button">Listo</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/config.js?v=1"></script>
+  <script src="assets/lib.js?v=1"></script>
+  <script src="assets/app.js?v=1"></script>
+</body>
+</html>
