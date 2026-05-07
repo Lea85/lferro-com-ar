@@ -240,6 +240,30 @@ html, body {
   font-weight: 500;
 }
 .cal-day.outside { background: transparent; color: transparent; cursor: default; }
+
+/* Día ya transcurrido: tachado con cruz roja y sin posibilidad de seleccionar */
+.cal-day.past {
+  background: #fdecec;
+  color: #b3413a;
+  cursor: not-allowed;
+  opacity: 0.85;
+  position: relative;
+  overflow: hidden;
+}
+.cal-day.past .pill { color: #b3413a; opacity: 0.7; }
+.cal-day.past:hover { transform: none; border-color: transparent; }
+.cal-day .past-x {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--danger);
+  pointer-events: none;
+  text-shadow: 0 0 6px #fff8;
+  opacity: 0.85;
+}
 .cal-day:not(.disabled):not(.selected):not(.outside):hover {
   border-color: var(--primary);
   transform: translateY(-1px);
@@ -269,6 +293,8 @@ html, body {
 .sw.empty { background: #e8f8ee; }
 .sw.partial { background: #fff5e0; }
 .sw.full { background: #ffe8e8; }
+.sw.past { background: #fdecec; border: 1px solid #e74c3c; position: relative; }
+.sw.past::after { content: '✕'; color: var(--danger); font-size: 11px; font-weight: 900; position: absolute; inset: 0; display: grid; place-items: center; }
 
 .slots-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -330,6 +356,19 @@ html, body {
   border-color: var(--ok);
 }
 .slot.mine .who { color: var(--ok); font-weight: 700; }
+.slot.expired:not(.taken) {
+  cursor: not-allowed;
+  background: #fdecec;
+  border-color: #f5c6c6;
+  color: #b3413a;
+}
+.slot.expired:not(.taken) .who { color: #b3413a; font-weight: 600; }
+.slot.expired:not(.taken):hover { transform: none; background: #fdecec; }
+.slot .expired-mark {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--danger);
+}
 
 .slot-empty {
   text-align: center;
@@ -395,6 +434,24 @@ html, body {
   transition: all .15s;
 }
 .bet .delete:hover { background: #fde8e8; color: var(--danger); }
+
+.bet-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.bet .expired-mark {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--danger);
+  padding: 4px 8px;
+  background: #fde8e8;
+  border-radius: 8px;
+  line-height: 1;
+}
+.bet.expired {
+  background: #fdecec;
+  border-color: #f5c6c6;
+}
+.bet.expired .info .name { color: #7a3a35; }
+.bet.expired .info .when { color: #a3625e; text-decoration: line-through; text-decoration-color: rgba(231, 76, 60, 0.55); }
+.bet.expired .avatar { filter: grayscale(0.5) brightness(0.95); }
 
 .empty-state {
   text-align: center; padding: 32px 14px;

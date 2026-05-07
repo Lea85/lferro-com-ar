@@ -46,6 +46,25 @@ function isInRange(d) {
   const t = d.getTime();
   return t >= START_DATE.getTime() && t <= END_DATE.getTime();
 }
+function todayStart() {
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+}
+// Día anterior al día actual (hoy NO está past hasta que termine)
+function isDayPast(d) {
+  return d.getTime() < todayStart().getTime();
+}
+// Fin de la franja del slot (slot 0 = 00-02:59:59 → end = 03:00:00)
+function slotEnd(dateKeyStr, slotId) {
+  const d = parseKey(dateKeyStr);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), (slotId + 1) * 3, 0, 0, 0);
+}
+function isSlotExpired(dateKeyStr, slotId) {
+  return Date.now() >= slotEnd(dateKeyStr, slotId).getTime();
+}
+function isBetExpired(b) {
+  return isSlotExpired(b.dateKey, b.slotId);
+}
 function formatLong(d) {
   return d.toLocaleDateString('es-AR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
@@ -206,6 +225,7 @@ function renderCalendar() {
     const d = new Date(cur.getFullYear(), cur.getMonth(), day);
     const k = dateKey(d);
     const inRange = isInRange(d);
+    const past = inRange && isDayPast(d);
     const taken = state.bets.filter(b => b.dateKey === k).length;
     const full = taken >= SLOTS.length;
     const partial = taken > 0 && !full;
@@ -214,19 +234,23 @@ function renderCalendar() {
     const e = document.createElement('div');
     e.className = 'cal-day';
     if (!inRange) e.classList.add('disabled');
+    else if (past) e.classList.add('past');
     else if (full) e.classList.add('full');
     else if (partial) e.classList.add('partial');
     else if (empty) e.classList.add('empty');
     if (state.selectedDate === k) e.classList.add('selected');
 
     e.innerHTML = `<div>${day}</div>` +
-      (inRange ? `<div class="pill">${taken}/${SLOTS.length}</div>` : '');
+      (inRange ? `<div class="pill">${taken}/${SLOTS.length}</div>` : '') +
+      (past ? `<span class="past-x" aria-hidden="true">✕</span>` : '');
 
-    if (inRange) {
+    if (inRange && !past) {
       e.addEventListener('click', () => {
         state.selectedDate = k;
         render();
       });
+    } else if (past) {
+      e.title = 'Esta fecha ya pasó';
     }
     grid.appendChild(e);
   }
@@ -252,17 +276,35 @@ function renderSlots() {
   SLOTS.forEach(s => {
     const taken = dayBets.find(b => b.slotId === s.id);
     const isMine = taken && normalizeName(taken.name) === myName && myName;
+    const expired = isSlotExpired(state.selectedDate, s.id);
 
     const el = document.createElement('div');
-    el.className = 'slot' + (taken ? ' taken' : '') + (isMine ? ' mine' : '');
+    el.className = 'slot'
+      + (taken ? ' taken' : '')
+      + (isMine ? ' mine' : '')
+      + (expired ? ' expired' : '');
+
+    let whoText;
+    if (taken) {
+      whoText = isMine ? '✅ Tu apuesta' : '🔒 Apostado por ' + escapeHtml(taken.name);
+    } else if (expired) {
+      whoText = '⛔ Franja horaria vencida';
+    } else {
+      whoText = 'Disponible';
+    }
+
     el.innerHTML = `
       <div>
         <div class="time">${s.label}</div>
-        <div class="who">${taken ? (isMine ? '✅ Tu apuesta' : '🔒 Apostado por ' + escapeHtml(taken.name)) : 'Disponible'}</div>
+        <div class="who">${whoText}</div>
       </div>
-      <div>${taken ? '' : '<span style="color: var(--primary); font-weight:700;">Apostar →</span>'}</div>
+      <div>${
+        expired && !taken ? '<span class="expired-mark" aria-hidden="true">✕</span>'
+        : taken ? ''
+        : '<span style="color: var(--primary); font-weight:700;">Apostar →</span>'
+      }</div>
     `;
-    if (!taken) {
+    if (!taken && !expired) {
       el.addEventListener('click', () => placeBet(state.selectedDate, s.id));
     }
     cont.appendChild(el);
@@ -295,8 +337,21 @@ function renderBets() {
     const d = parseKey(b.dateKey);
     const slot = SLOTS[b.slotId];
     const mine = normalizeName(b.name) === myName && myName;
+    const expired = isBetExpired(b);
     const item = document.createElement('div');
-    item.className = 'bet';
+    item.className = 'bet' + (expired ? ' expired' : '');
+
+    // Acciones a la derecha:
+    //  - si la apuesta esta vencida: cruz roja siempre (mas el delete propio si es tuya).
+    //  - si no: solo el boton delete (cuando es tuya).
+    let rightHtml = '';
+    if (expired) {
+      rightHtml += `<span class="expired-mark" title="Esta franja horaria ya pasó" aria-label="Apuesta vencida">✕</span>`;
+    }
+    if (mine && !expired) {
+      rightHtml += `<button class="delete" title="Eliminar apuesta" data-id="${b.id}">✕</button>`;
+    }
+
     item.innerHTML = `
       <div class="left">
         <div class="avatar" style="background: ${avatarColor(b.name)};">${initials(b.name)}</div>
@@ -305,7 +360,7 @@ function renderBets() {
           <div class="when">${formatLong(d)} · ${slot.label}</div>
         </div>
       </div>
-      ${mine ? `<button class="delete" title="Eliminar apuesta" data-id="${b.id}">✕</button>` : ''}
+      <div class="bet-actions">${rightHtml}</div>
     `;
     list.appendChild(item);
   });
@@ -465,4 +520,8 @@ document.querySelectorAll('#filter button').forEach(b => {
       console.warn('Realtime no disponible:', err);
     }
   }
+
+  // Re-render cada minuto: para que las franjas que vencen mientras la pagina
+  // esta abierta se marquen como expiradas sin necesidad de recargar.
+  setInterval(render, 60_000);
 })();
