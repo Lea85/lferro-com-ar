@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Visor de Visio (.vsdx)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #273449;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-2: #2563eb;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  header .spacer { flex: 1; }
+  button, label.filebtn, select {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button:hover, label.filebtn:hover { background: #33465f; }
+  .primary { background: var(--accent); border-color: var(--accent-2); color: #fff; }
+  .primary:hover { background: var(--accent-2); }
+  input[type="file"] { display: none; }
+  #stage {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(#0b1222 1px, transparent 1px) 0 0 / 24px 24px,
+      linear-gradient(90deg, #0b1222 1px, transparent 1px) 0 0 / 24px 24px,
+      #131c30;
+  }
+  #drop {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; color: var(--muted); gap: 14px;
+    pointer-events: none;
+  }
+  #drop .big { font-size: 20px; color: var(--text); }
+  #drop.hidden { display: none; }
+  #drop.dragover { background: rgba(59,130,246,.12); }
+  svg { display: block; width: 100%; height: 100%; }
+  #hint {
+    position: absolute; left: 12px; bottom: 12px;
+    background: rgba(15,23,42,.85);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 10px;
+    font-size: 12px; color: var(--muted);
+  }
+  #err {
+    position: absolute; left: 50%; top: 20px; transform: translateX(-50%);
+    background: #7f1d1d; color: #fff; padding: 8px 14px; border-radius: 6px;
+    font-size: 13px; display: none; max-width: 80%;
+  }
+  .zoomctl { display: flex; gap: 6px; align-items: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Visor de Visio (.vsdx)</h1>
+  <label class="filebtn primary">Abrir archivo .vsdx
+    <input type="file" id="file" accept=".vsdx,.vsdm" />
+  </label>
+  <select id="pageSel" title="Página" style="display:none"></select>
+  <div class="spacer"></div>
+  <div class="zoomctl">
+    <button id="zoomOut" title="Alejar">−</button>
+    <button id="zoomIn" title="Acercar">+</button>
+    <button id="fit" title="Ajustar a pantalla">Ajustar</button>
+    <button id="png" title="Exportar imagen PNG">Exportar PNG</button>
+    <button id="svgBtn" title="Exportar SVG">Exportar SVG</button>
+  </div>
+</header>
+
+<div id="stage">
+  <div id="err"></div>
+  <div id="drop">
+    <div class="big">Arrastrá tu archivo <b>.vsdx</b> aquí</div>
+    <div>o usá el botón <b>Abrir archivo .vsdx</b> arriba</div>
+  </div>
+  <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="hint">Rueda del mouse = zoom · Arrastrar = mover</div>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const EMU_PER_IN = 1; // Visio usa pulgadas
+const PX_PER_IN = 96; // resolución de renderizado
+
+const canvas = document.getElementById("canvas");
+const dropEl = document.getElementById("drop");
+const errEl = document.getElementById("err");
+const pageSel = document.getElementById("pageSel");
+
+let pages = [];        // [{name, contentXml, rels:{id->imgPath}, media:{path->dataURL}, width,height}]
+let current = -1;
+let view = { x: 0, y: 0, scale: 1 }; // pan/zoom del <g>
+let gRoot = null;
+
+function showErr(msg) {
+  errEl.textContent = msg;
+  errEl.style.display = "block";
+  setTimeout(() => (errEl.style.display = "none"), 6000);
+}
+
+/* ---------- Carga del archivo ---------- */
+document.getElementById("file").addEventListener("change", e => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+["dragenter", "dragover"].forEach(ev =>
+  dropEl.parentElement.addEventListener(ev, e => { e.preventDefault(); dropEl.classList.add("dragover"); }));
+["dragleave", "drop"].forEach(ev =>
+  dropEl.parentElement.addEventListener(ev, e => { e.preventDefault(); dropEl.classList.remove("dragover"); }));
+dropEl.parentElement.addEventListener("drop", e => {
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+
+async function loadFile(file) {
+  try {
+    if (typeof JSZip === "undefined") {
+      showErr("No se pudo cargar la librería JSZip (¿sin internet?). Ver nota al pie del README.");
+      return;
+    }
+    const buf = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(buf);
+    pages = await parseVsdx(zip);
+    if (!pages.length) { showErr("No se encontraron páginas en el archivo."); return; }
+    buildPageSelector();
+    dropEl.classList.add("hidden");
+    selectPage(0);
+  } catch (err) {
+    console.error(err);
+    showErr("Error al abrir el archivo: " + err.message);
+  }
+}
+
+/* ---------- Parseo del .vsdx (paquete OPC) ---------- */
+async function parseVsdx(zip) {
+  const parser = new DOMParser();
+  const readXml = async p => {
+    const f = zip.file(p);
+    if (!f) return null;
+    return parser.parseFromString(await f.async("string"), "application/xml");
+  };
+
+  // pages.xml describe páginas; sus rels apuntan a pageN.xml
+  const pagesDoc = await readXml("visio/pages/pages.xml");
+  const pagesRels = await readXml("visio/pages/_rels/pages.xml.rels");
+  if (!pagesDoc) return [];
+
+  const relMap = {};
+  if (pagesRels) {
+    pagesRels.querySelectorAll("Relationship").forEach(r => {
+      relMap[r.getAttribute("Id")] = r.getAttribute("Target");
+    });
+  }
+
+  const result = [];
+  const pageEls = [...pagesDoc.querySelectorAll("Page")];
+  for (const pg of pageEls) {
+    const name = pg.getAttribute("Name") || pg.getAttribute("NameU") || "Página";
+    let w = 11, h = 8.5;
+    pg.querySelectorAll(":scope > PageSheet > Cell").forEach(c => {
+      if (c.getAttribute("N") === "PageWidth") w = parseFloat(c.getAttribute("V"));
+      if (c.getAttribute("N") === "PageHeight") h = parseFloat(c.getAttribute("V"));
+    });
+    const relEl = pg.querySelector("Rel");
+    const relId = relEl ? relEl.getAttribute("r:id") || relEl.getAttribute("id") : null;
+    let target = relId ? relMap[relId] : null;
+    if (!target) continue;
+    // normalizar ruta relativa a visio/pages/
+    let path = ("visio/pages/" + target).replace(/\/\.\//g, "/");
+    path = path.replace(/[^\/]+\/\.\.\//g, "");
+    const contentDoc = await readXml(path);
+    if (!contentDoc) continue;
+
+    // rels de la página (imágenes)
+    const baseDir = path.substring(0, path.lastIndexOf("/"));
+    const relsPath = baseDir + "/_rels/" + path.substring(path.lastIndexOf("/") + 1) + ".rels";
+    const pageRels = await readXml(relsPath);
+    const media = {};
+    if (pageRels) {
+      for (const r of pageRels.querySelectorAll("Relationship")) {
+        const id = r.getAttribute("Id");
+        let t = r.getAttribute("Target");
+        let mp = (baseDir + "/" + t);
+        // resolver ../
+        const parts = [];
+        mp.split("/").forEach(seg => {
+          if (seg === "..") parts.pop();
+          else if (seg !== ".") parts.push(seg);
+        });
+        mp = parts.join("/");
+        const mf = zip.file(mp);
+        if (mf) {
+          const b64 = await mf.async("base64");
+          const ext = mp.split(".").pop().toLowerCase();
+          const mime = ext === "png" ? "image/png" : ext === "jpg" || ext === "jpeg" ? "image/jpeg"
+            : ext === "emf" ? "image/emf" : ext === "gif" ? "image/gif" : "image/png";
+          media[id] = { dataUrl: "data:" + mime + ";base64," + b64, mime };
+        }
+      }
+    }
+    result.push({ name, contentDoc, media, width: w, height: h });
+  }
+  return result;
+}
+
+/* ---------- Utilidades de celdas ---------- */
+function cellVal(shape, name) {
+  // busca <Cell N='name'> directo del shape (no en secciones)
+  for (const c of shape.children) {
+    if (c.tagName === "Cell" && c.getAttribute("N") === name) return c.getAttribute("V");
+  }
+  return null;
+}
+function num(v, def = 0) { const n = parseFloat(v); return isNaN(n) ? def : n; }
+
+function getGeometrySections(shape) {
+  return [...shape.children].filter(c => c.tagName === "Section" && c.getAttribute("N") === "Geometry");
+}
+function getSection(shape, n) {
+  return [...shape.children].find(c => c.tagName === "Section" && c.getAttribute("N") === n) || null;
+}
+
+/* color del texto (primer Character/Row con Color) */
+function textColor(shape) {
+  const sec = getSection(shape, "Character");
+  if (sec) {
+    for (const row of sec.children) {
+      for (const c of row.children) {
+        if (c.getAttribute && c.getAttribute("N") === "Color") {
+          const v = c.getAttribute("V");
+          if (v && v.startsWith("#")) return v;
+        }
+      }
+    }
+  }
+  return "#111111";
+}
+function textSize(shape) {
+  const sec = getSection(shape, "Character");
+  if (sec) {
+    for (const row of sec.children) {
+      for (const c of row.children) {
+        if (c.getAttribute && c.getAttribute("N") === "Size") {
+          const v = num(c.getAttribute("V"), 0);
+          if (v > 0) return v; // en pulgadas
+        }
+      }
+    }
+  }
+  return 0.14;
+}
+
+function getText(shape) {
+  const t = [...shape.children].find(c => c.tagName === "Text");
+  if (!t) return "";
+  // texto plano ignorando cp/pp/tp/fld
+  let out = "";
+  t.childNodes.forEach(n => {
+    if (n.nodeType === 3) out += n.nodeValue;
+  });
+  return out.replace(/\r/g, "").trim();
+}
+
+/* ---------- Render ---------- */
+function selectPage(i) {
+  current = i;
+  renderPage(pages[i]);
+  fitToScreen();
+}
+
+function buildPageSelector() {
+  if (pages.length > 1) {
+    pageSel.style.display = "";
+    pageSel.innerHTML = "";
+    pages.forEach((p, i) => {
+      const o = document.createElement("option");
+      o.value = i; o.textContent = p.name;
+      pageSel.appendChild(o);
+    });
+    pageSel.onchange = () => selectPage(+pageSel.value);
+  } else {
+    pageSel.style.display = "none";
+  }
+}
+
+function renderPage(page) {
+  while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+
+  // defs: flecha
+  const defs = document.createElementNS(NS, "defs");
+  defs.innerHTML =
+    '<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+    '<path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker>';
+  canvas.appendChild(defs);
+
+  gRoot = document.createElementNS(NS, "g");
+  canvas.appendChild(gRoot);
+
+  const H = page.height; // para invertir Y
+  const S = PX_PER_IN;
+  const toX = xin => xin * S;
+  const toY = yin => (H - yin) * S;
+
+  // fondo blanco de la página
+  const bg = document.createElementNS(NS, "rect");
+  bg.setAttribute("x", 0); bg.setAttribute("y", 0);
+  bg.setAttribute("width", page.width * S);
+  bg.setAttribute("height", page.height * S);
+  bg.setAttribute("fill", "#ffffff");
+  bg.setAttribute("stroke", "#cbd5e1");
+  gRoot.appendChild(bg);
+
+  const shapesRoot = page.contentDoc.querySelector("Shapes");
+  if (!shapesRoot) return;
+
+  const shapes = [...shapesRoot.children].filter(c => c.tagName === "Shape");
+
+  // dibujar primero conectores, luego formas (para que el texto quede encima)
+  const connectors = [], nodes = [];
+  shapes.forEach(sh => {
+    const isConn = cellVal(sh, "BeginX") !== null || cellVal(sh, "EndX") !== null;
+    (isConn ? connectors : nodes).push(sh);
+  });
+
+  connectors.forEach(sh => drawShape(sh, page, toX, toY, S, true));
+  nodes.forEach(sh => drawShape(sh, page, toX, toY, S, false));
+}
+
+function localToPage(shape, lx, ly) {
+  const pinX = num(cellVal(shape, "PinX"));
+  const pinY = num(cellVal(shape, "PinY"));
+  const locX = num(cellVal(shape, "LocPinX"));
+  const locY = num(cellVal(shape, "LocPinY"));
+  const angle = num(cellVal(shape, "Angle"));
+  const flipX = num(cellVal(shape, "FlipX"));
+  const flipY = num(cellVal(shape, "FlipY"));
+  const w = num(cellVal(shape, "Width"));
+  const h = num(cellVal(shape, "Height"));
+
+  let dx = lx - locX;
+  let dy = ly - locY;
+  if (flipX) dx = (w - lx) - locX;
+  if (flipY) dy = (h - ly) - locY;
+  const ca = Math.cos(angle), sa = Math.sin(angle);
+  const rx = dx * ca - dy * sa;
+  const ry = dx * sa + dy * ca;
+  return { x: pinX + rx, y: pinY + ry };
+}
+
+function drawShape(shape, page, toX, toY, S, isConn) {
+  const w = num(cellVal(shape, "Width"));
+  const h = num(cellVal(shape, "Height"));
+  const type = shape.getAttribute("Type");
+
+  // Imagen incrustada (Foreign)
+  const fd = [...shape.children].find(c => c.tagName === "ForeignData");
+  let hasImage = false;
+  if (fd) {
+    const relEl = fd.querySelector("Rel");
+    const rid = relEl ? (relEl.getAttribute("r:id") || relEl.getAttribute("id")) : null;
+    const m = rid ? page.media[rid] : null;
+    if (m && m.mime !== "image/emf") {
+      hasImage = true;
+      const p0 = localToPage(shape, 0, 0);
+      const p1 = localToPage(shape, w, h);
+      const x = Math.min(toX(p0.x), toX(p1.x));
+      const y = Math.min(toY(p0.y), toY(p1.y));
+      const img = document.createElementNS(NS, "image");
+      img.setAttributeNS("http://www.w3.org/1999/xlink", "href", m.dataUrl);
+      img.setAttribute("href", m.dataUrl);
+      img.setAttribute("x", x);
+      img.setAttribute("y", y);
+      img.setAttribute("width", Math.abs(toX(p1.x) - toX(p0.x)));
+      img.setAttribute("height", Math.abs(toY(p1.y) - toY(p0.y)));
+      gRoot.appendChild(img);
+    }
+  }
+
+  // Geometrías (paths)
+  const lineColor = cellVal(shape, "LineColor") || "#334155";
+  const geoms = getGeometrySections(shape);
+  geoms.forEach(g => {
+    const noShow = num(cellVal2(g, "NoShow"));
+    if (noShow) return;
+    const gNoFill = num(cellVal2(g, "NoFill"));
+    let d = "";
+    let started = false;
+    for (const row of g.children) {
+      if (row.tagName !== "Row") continue;
+      if (row.getAttribute("Del") === "1") continue;
+      const t = row.getAttribute("T");
+      const rx = cellFromRow(row, "X"), ry = cellFromRow(row, "Y");
+      if (t === "MoveTo") { d += `M ${toX(localToPage(shape, rx, ry).x)} ${toY(localToPage(shape, rx, ry).y)} `; started = true; }
+      else if (t === "LineTo") { const p = localToPage(shape, rx, ry); d += `L ${toX(p.x)} ${toY(p.y)} `; }
+      else if (t === "RelMoveTo") { const p = localToPage(shape, rx * w, ry * h); d += `M ${toX(p.x)} ${toY(p.y)} `; started = true; }
+      else if (t === "RelLineTo") { const p = localToPage(shape, rx * w, ry * h); d += `L ${toX(p.x)} ${toY(p.y)} `; }
+      else if (t === "EllipticalArcTo" || t === "ArcTo") { const p = localToPage(shape, rx, ry); d += `L ${toX(p.x)} ${toY(p.y)} `; }
+    }
+    if (!d) return;
+    // Relleno: nunca sobre imágenes ni conectores, y respetando NoFill
+    let fill = "none";
+    if (!isConn && !hasImage && !gNoFill) {
+      const fg = cellVal(shape, "FillForegnd");
+      fill = (fg && fg.startsWith("#")) ? fg : "#ffffff";
+    }
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", d.trim());
+    path.setAttribute("stroke", lineColor.startsWith("#") ? lineColor : "#334155");
+    path.setAttribute("stroke-width", 1.4);
+    path.setAttribute("fill", fill);
+    if (isConn) path.setAttribute("marker-end", "url(#arrow)");
+    path.setAttribute("stroke-linejoin", "round");
+    gRoot.appendChild(path);
+  });
+
+  // Texto
+  const text = getText(shape);
+  if (text) {
+    const tpx = cellVal(shape, "TxtPinX"), tpy = cellVal(shape, "TxtPinY");
+    let cx, cy;
+    if (tpx !== null && tpy !== null) {
+      const p = localToPage(shape, num(tpx), num(tpy));
+      cx = toX(p.x); cy = toY(p.y);
+    } else {
+      const p = localToPage(shape, w / 2, h / 2);
+      cx = toX(p.x); cy = toY(p.y);
+    }
+    const fill = isConn ? "#0f172a" : textColor(shape);
+    const fs = Math.max(8, textSize(shape) * S * 0.9);
+    drawWrappedText(text, cx, cy, fs, fill, w * S, isConn);
+  }
+}
+
+function cellVal2(el, name) {
+  for (const c of el.children) {
+    if (c.tagName === "Cell" && c.getAttribute("N") === name) return c.getAttribute("V");
+  }
+  return null;
+}
+function cellFromRow(row, name) {
+  for (const c of row.children) {
+    if (c.tagName === "Cell" && c.getAttribute("N") === name) return num(c.getAttribute("V"));
+  }
+  return 0;
+}
+
+function drawWrappedText(text, cx, cy, fs, fill, maxW, isConn) {
+  const lines = wrap(text, maxW, fs);
+  const total = lines.length * (fs * 1.2);
+  const startY = cy - total / 2 + fs;
+  const t = document.createElementNS(NS, "text");
+  t.setAttribute("x", cx);
+  t.setAttribute("y", startY);
+  t.setAttribute("text-anchor", "middle");
+  t.setAttribute("font-family", "Consolas, 'Segoe UI', sans-serif");
+  t.setAttribute("font-size", fs);
+  t.setAttribute("fill", fill);
+  if (isConn) {
+    t.setAttribute("stroke", "#ffffff");
+    t.setAttribute("stroke-width", fs * 0.28);
+    t.setAttribute("paint-order", "stroke");
+  }
+  lines.forEach((ln, i) => {
+    const ts = document.createElementNS(NS, "tspan");
+    ts.setAttribute("x", cx);
+    ts.setAttribute("dy", i === 0 ? 0 : fs * 1.2);
+    ts.textContent = ln;
+    t.appendChild(ts);
+  });
+  gRoot.appendChild(t);
+}
+
+function wrap(text, maxW, fs) {
+  const words = text.split(/\s+/);
+  const charW = fs * 0.58;
+  const maxChars = Math.max(6, Math.floor((maxW * 0.92) / charW));
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    if ((cur + " " + w).trim().length <= maxChars) cur = (cur + " " + w).trim();
+    else { if (cur) lines.push(cur); cur = w; }
+  }
+  if (cur) lines.push(cur);
+  return lines.length ? lines : [text];
+}
+
+/* ---------- Pan / Zoom ---------- */
+function applyView() {
+  gRoot.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.scale})`);
+}
+function fitToScreen() {
+  const page = pages[current];
+  if (!page) return;
+  const rect = canvas.getBoundingClientRect();
+  const cw = page.width * PX_PER_IN, ch = page.height * PX_PER_IN;
+  const pad = 40;
+  const s = Math.min((rect.width - pad) / cw, (rect.height - pad) / ch);
+  view.scale = s > 0 ? s : 1;
+  view.x = (rect.width - cw * view.scale) / 2;
+  view.y = (rect.height - ch * view.scale) / 2;
+  applyView();
+}
+document.getElementById("fit").onclick = fitToScreen;
+document.getElementById("zoomIn").onclick = () => zoomAt(1.2);
+document.getElementById("zoomOut").onclick = () => zoomAt(1 / 1.2);
+function zoomAt(f, ox, oy) {
+  const rect = canvas.getBoundingClientRect();
+  ox = ox ?? rect.width / 2; oy = oy ?? rect.height / 2;
+  const nx = ox - (ox - view.x) * f;
+  const ny = oy - (oy - view.y) * f;
+  view.scale *= f; view.x = nx; view.y = ny;
+  applyView();
+}
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  zoomAt(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX - rect.left, e.clientY - rect.top);
+}, { passive: false });
+
+let dragging = false, lastX = 0, lastY = 0;
+canvas.addEventListener("mousedown", e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+window.addEventListener("mousemove", e => {
+  if (!dragging) return;
+  view.x += e.clientX - lastX; view.y += e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY; applyView();
+});
+window.addEventListener("mouseup", () => dragging = false);
+
+/* ---------- Exportar ---------- */
+document.getElementById("svgBtn").onclick = () => {
+  if (current < 0) return;
+  const clone = serializeCurrent();
+  const blob = new Blob([clone], { type: "image/svg+xml" });
+  downloadBlob(blob, (pages[current].name || "visio") + ".svg");
+};
+document.getElementById("png").onclick = () => {
+  if (current < 0) return;
+  const page = pages[current];
+  const svgStr = serializeCurrent();
+  const img = new Image();
+  const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+  img.onload = () => {
+    const scale = 2;
+    const c = document.createElement("canvas");
+    c.width = page.width * PX_PER_IN * scale;
+    c.height = page.height * PX_PER_IN * scale;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    c.toBlob(b => downloadBlob(b, (page.name || "visio") + ".png"));
+    URL.revokeObjectURL(url);
+  };
+  img.onerror = () => showErr("No se pudo exportar a PNG (posibles imágenes EMF no soportadas).");
+  img.src = url;
+};
+function serializeCurrent() {
+  const page = pages[current];
+  const w = page.width * PX_PER_IN, h = page.height * PX_PER_IN;
+  const tmp = canvas.cloneNode(true);
+  tmp.removeAttribute("style");
+  tmp.setAttribute("width", w);
+  tmp.setAttribute("height", h);
+  tmp.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  const g = tmp.querySelector("g");
+  if (g) g.removeAttribute("transform");
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(tmp);
+}
+function downloadBlob(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+window.addEventListener("resize", () => { if (current >= 0) applyView(); });
+</script>
+</body>
+</html>
