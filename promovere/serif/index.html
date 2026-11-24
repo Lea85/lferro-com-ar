@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Promovêre — Versión A</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0f172a; --paper: #f8fafc; --muted: #475569; --line: #e2e8f0;
+      --blue: #0083c1; --card: #fff; --ring: #0f172a;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: Lato, sans-serif; font-size: 16px; line-height: 1.5; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+    .skip { position: absolute; left: 16px; top: -48px; background: #fff; padding: 8px 12px; z-index: 50; }
+    .skip:focus { top: 12px; }
+    .switch { position: sticky; top: 0; z-index: 40; display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; padding: 8px 16px; background: var(--ink); }
+    .switch a { color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; cursor: pointer; }
+    .switch a[aria-current="page"] { background: #fff; color: var(--ink); }
+    .hero { position: relative; min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #fff; text-align: center; }
+    .hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .hero .scrim { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(15,23,42,.72), rgba(15,23,42,.45) 40%, rgba(15,23,42,.82)); }
+    .nav, .hero-copy { position: relative; z-index: 1; }
+    .nav { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 28px; }
+    .logo { font-family: "EB Garamond", serif; font-size: 28px; font-weight: 600; text-decoration: none; }
+    .nav-links { display: flex; gap: 8px; align-items: center; }
+    .nav-links a { text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; padding: 0 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .nav-links .login { border: 1px solid rgba(255,255,255,.45); border-radius: 8px; padding: 0 14px; }
+    .hero-copy { width: min(760px, calc(100% - 40px)); margin: 0 auto; padding: 120px 0 80px; }
+    .pill { display: inline-block; border: 1px solid rgba(255,255,255,.4); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 18px 0 0; font-family: "EB Garamond", serif; font-weight: 500; font-size: clamp(48px, 7vw, 88px); line-height: .95; }
+    h1 em { font-style: normal; color: #7dd3fc; }
+    .lede { margin: 18px auto 0; max-width: 40rem; font-size: 18px; color: rgba(255,255,255,.88); }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 28px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 18px; border-radius: 8px; background: var(--blue); color: #fff; font-weight: 700; text-decoration: none; cursor: pointer; border: 0; font: inherit; font-weight: 700; transition: background-color .2s ease; }
+    .btn:hover { background: #006a9e; }
+    .btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,.55); }
+    .btn.ghost:hover { background: rgba(255,255,255,.12); }
+    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    section { padding: 80px 0; }
+    .kicker { margin: 0; color: var(--blue); font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; text-align: center; }
+    h2 { margin: 8px 0 0; text-align: center; font-family: "EB Garamond", serif; font-weight: 500; font-size: clamp(32px, 4vw, 48px); line-height: 1.05; }
+    .sub { margin: 12px auto 0; max-width: 42rem; text-align: center; color: var(--muted); font-size: 18px; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+    .card h3 { margin: 12px 0 8px; font-size: 20px; }
+    .card p, .mini p { margin: 0; color: var(--muted); }
+    .icon { width: 28px; height: 28px; color: var(--blue); }
+    .minis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+    .mini { display: flex; gap: 12px; padding: 18px; background: #eef3f7; border-radius: 12px; }
+    .mini h3 { margin: 0 0 4px; font-size: 16px; }
+    .reps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
+    .rep { position: relative; display: block; min-height: 280px; border-radius: 12px; overflow: hidden; color: #fff; text-decoration: none; cursor: pointer; }
+    .rep img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+    .rep:hover img { transform: scale(1.04); }
+    .rep span { position: absolute; inset: auto 0 0 0; padding: 20px; background: linear-gradient(to top, rgba(15,23,42,.88), transparent); }
+    .rep small { letter-spacing: .1em; text-transform: uppercase; font-weight: 700; font-size: 12px; }
+    .rep strong { display: block; font-family: "EB Garamond", serif; font-size: 28px; font-weight: 500; }
+    .partners { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 36px; }
+    .band { background: var(--ink); color: #fff; text-align: center; }
+    .band h2, .band .kicker { color: #fff; }
+    .band .kicker { color: #7dd3fc; }
+    .band p { color: rgba(255,255,255,.8); }
+    .contact { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+    .contact h2, .facts h2 { text-align: left; }
+    .facts p { color: var(--muted); }
+    .fact { display: flex; gap: 12px; margin-top: 16px; }
+    .fact b { display: block; }
+    form { display: grid; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+    label { font-size: 14px; font-weight: 700; }
+    input, textarea { width: 100%; font: inherit; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+    textarea { min-height: 120px; resize: vertical; }
+    footer { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 24px 0 40px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+    @media (max-width: 900px) {
+      .cards, .minis, .reps, .partners, .contact { grid-template-columns: 1fr; }
+      .nav-links a:not(.login) { display: none; }
+      section { padding: 56px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .btn, .rep img { transition: none; }
+      .rep:hover img { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+  <nav class="switch" aria-label="Versiones de la landing">
+    <a href="/promovere/">Las tres</a>
+    <a href="/promovere/serif/" aria-current="page">A · Serif</a>
+    <a href="/promovere/suiza/">B · Suiza</a>
+    <a href="/promovere/editorial/">C · Editorial</a>
+  </nav>
+  <header class="hero" id="contenido">
+    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80" alt="" />
+    <div class="scrim"></div>
+    <nav class="nav" aria-label="Secciones">
+      <a class="logo" href="#contenido">Promovêre</a>
+      <div class="nav-links">
+        <a href="#servicios">Servicios</a>
+        <a href="#reps">Vê Reps</a>
+        <a href="#partners">Partners</a>
+        <a href="#contacto">Contacto</a>
+        <a class="login" href="#contacto">Iniciar sesión</a>
+      </div>
+    </nav>
+    <div class="hero-copy">
+      <span class="pill">Especialistas en promoción turística</span>
+      <h1>Somos <em>Promovêre</em></h1>
+      <p class="lede">Ayudamos a nuestros clientes a desarrollar marcas fuertes, estrategias de marketing eficaces y una gran experiencia en los medios de comunicación para destinos, hoteles y servicios turísticos.</p>
+      <div class="actions">
+        <a class="btn" href="#servicios">Conocé nuestros servicios</a>
+        <a class="btn ghost" href="#contacto">Comunidad Promovêre</a>
+      </div>
+    </div>
+  </header>
+
+  <section id="servicios">
+    <div class="wrap">
+      <p class="kicker">Nuestros servicios</p>
+      <h2>Solución integral para tu marca turística</h2>
+      <p class="sub">Brindamos una solución integral para destinos, hoteles y proveedores de servicios que quieran posicionarse en los mercados de Argentina y Latinoamérica.</p>
+      <div class="cards">
+        <article class="card"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9s-1.3 6.2-3.8 9c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg><h3>Representaciones turísticas</h3><p>Nuestro servicio Vê REPS® ofrece una solución integral: visitas comerciales, capacitación, eventos, fam tours y difusión en mercados clave.</p></article>
+        <article class="card"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10v8a2 2 0 0 0 2 2h12M4 10l8-6 8 6M9 20v-6h6v6"/></svg><h3>Marketing turístico</h3><p>Campañas de promoción y marketing digital para destinos, hoteles y proveedores. Acciones puntuales o estrategias a largo plazo.</p></article>
+        <article class="card"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 11a3 3 0 1 0-3-3M8 13a3 3 0 1 0-3-3M16 11a4 4 0 0 1 4 4v2H12M8 13a4 4 0 0 0-4 4v2h8"/></svg><h3>Relaciones públicas</h3><p>Gestionamos tu comunicación online y offline en medios masivos y del trade para posicionar tu marca en todo LATAM.</p></article>
+      </div>
+      <div class="minis">
+        <article class="mini"><div><h3>Capacitación</h3><p>Capacitamos fuerza de ventas y departamentos de producto, en formatos presenciales y online.</p></div></article>
+        <article class="mini"><div><h3>Desarrollo de producto</h3><p>Asesoramiento para que tu producto o servicio destaque y se diferencie en el mercado.</p></div></article>
+        <article class="mini"><div><h3>Eventos y fam tours</h3><p>Organización de eventos, caravanas comerciales y viajes de familiarización para agentes.</p></div></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="reps" style="background:#fff">
+    <div class="wrap">
+      <p class="kicker">Vê Reps®</p>
+      <h2>Nuestras representaciones</h2>
+      <p class="sub">Conocé las marcas turísticas que representamos en Argentina y LATAM.</p>
+      <div class="reps">
+        <a class="rep" href="#contacto"><img src="https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?auto=format&fit=crop&w=900&q=80" alt=""/><span><small>Cuba</small><strong>Gaviota Hoteles</strong>Hoteles en la auténtica Cuba</span></a>
+        <a class="rep" href="#contacto"><img src="https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?auto=format&fit=crop&w=900&q=80" alt=""/><span><small>Grecia</small><strong>Hellenic Travel Network</strong>Grecia y ¡mucho más!</span></a>
+        <a class="rep" href="#contacto"><img src="https://images.unsplash.com/photo-1559599238-308793637427?auto=format&fit=crop&w=900&q=80" alt=""/><span><small>Islas Caimán</small><strong>Islas Caimán</strong>Soñá con Islas Caimán</span></a>
+        <a class="rep" href="#contacto"><img src="https://images.unsplash.com/photo-1510097467424-192d713fd8b2?auto=format&fit=crop&w=900&q=80" alt=""/><span><small>México</small><strong>Caribe Mexicano</strong>Descubrí la nueva era</span></a>
+        <a class="rep" href="#contacto"><img src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=900&q=80" alt=""/><span><small>México</small><strong>Atelier de Hoteles</strong>Descubrí Atelier de Hoteles</span></a>
+        <a class="rep" href="#contacto"><img src="https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=900&q=80" alt=""/><span><small>Estados Unidos</small><strong>Xplorer USA</strong>Explorá el estado del sol</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="partners">
+    <div class="wrap">
+      <p class="kicker">Partners</p>
+      <h2>Nuestros partners</h2>
+      <div class="partners">
+        <article class="card"><h3>Paranair</h3><p><strong>Vuelos regionales al mejor precio.</strong> Paranair ofrece una gran variedad de destinos y el mejor servicio en aeropuerto para vuelos regionales.</p></article>
+        <article class="card"><h3>Enjoy Pro</h3><p><strong>Vuelos conectando el Caribe.</strong> La plataforma online que te permite reservar vuelos y servicios en Cuba y el Caribe.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <p class="kicker">Red de distribución</p>
+      <h2>Comercializá nuestras reps</h2>
+      <p class="sub">Comercializá nuestras reps y sumate a la red de distribución más grande de turismo en LATAM.</p>
+      <div class="actions">
+        <a class="btn" href="#contacto">Quiero posicionar mi marca</a>
+        <a class="btn ghost" href="#contacto">Acceder a Comunidad Promovêre</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto">
+    <div class="wrap contact">
+      <div class="facts">
+        <p class="kicker" style="text-align:left">Contacto</p>
+        <h2>¿Querés posicionar tu marca turística en LATAM?</h2>
+        <p>¡Podemos ayudarte! Contactanos y empezá a crecer.</p>
+        <div class="fact"><div><b>Oficina</b>Av. Roque Sáenz Peña 720, piso 6, of. AB</div></div>
+        <div class="fact"><div><b>Teléfono</b>+54 9 11 4587 6932</div></div>
+        <div class="fact"><div><b>Email</b>marketing@promovere.com.ar</div></div>
+      </div>
+      <form action="mailto:marketing@promovere.com.ar" method="post" enctype="text/plain">
+        <h3 style="margin:0">Envianos tu consulta</h3>
+        <label for="nombre">Nombre completo</label>
+        <input id="nombre" name="nombre" autocomplete="name" required />
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" required />
+        <label for="empresa">Empresa / marca</label>
+        <input id="empresa" name="empresa" />
+        <label for="mensaje">Tu mensaje</label>
+        <textarea id="mensaje" name="mensaje"></textarea>
+        <button class="btn" type="submit">Enviar consulta</button>
+      </form>
+    </div>
+  </section>
+  <div class="wrap"><footer><span>Promovêre</span><span>© 2026 Promovêre. Todos los derechos reservados.</span></footer></div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Promovêre — tres opciones</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --ink: #0f172a; --muted: #475569; --blue: #0083c1; --line: #e2e8f0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Lato, sans-serif; color: var(--ink); background: #f8fafc; }
+    main { width: min(880px, calc(100% - 32px)); margin: 0 auto; padding: 64px 0 80px; }
+    h1 { margin: 0; font-size: clamp(36px, 6vw, 56px); letter-spacing: -0.03em; }
+    p { color: var(--muted); font-size: 18px; max-width: 40rem; }
+    .opts { display: grid; gap: 12px; margin-top: 32px; }
+    a.opt { display: block; background: #fff; border: 1px solid var(--line); padding: 20px 22px; text-decoration: none; color: inherit; }
+    a.opt:hover { border-color: var(--blue); }
+    a.opt:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+    a.opt strong { display: block; font-size: 20px; }
+    a.opt span { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Promovêre</h1>
+    <p>Tres interfaces de la misma landing: hero, servicios, representaciones, partners, red de distribución y contacto.</p>
+    <div class="opts">
+      <a class="opt" href="/promovere/serif/"><strong>A · Serif</strong><span>La misma página, con titular en serif y más aire.</span></a>
+      <a class="opt" href="/promovere/suiza/"><strong>B · Suiza</strong><span>Grilla estricta, sin sombras, foto al costado del titular.</span></a>
+      <a class="opt" href="/promovere/editorial/"><strong>C · Editorial</strong><span>Titular grande sobre la foto y el resto en formato de revista.</span></a>
+    </div>
+  </main>
+</body>
+</html>

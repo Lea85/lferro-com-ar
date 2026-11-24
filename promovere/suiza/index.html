@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Promovêre — Versión B</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --ink:#0f172a; --muted:#475569; --line:#d6dde6; --blue:#0083c1; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+    body { margin: 0; color: var(--ink); font-family: Lato, sans-serif; font-size: 16px; line-height: 1.5; background: #fff; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+    .skip { position: absolute; left: 12px; top: -48px; background: #fff; padding: 8px 12px; z-index: 50; }
+    .skip:focus { top: 8px; }
+    .switch { position: sticky; top: 0; z-index: 40; display: flex; flex-wrap: wrap; background: var(--ink); }
+    .switch a { color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; cursor: pointer; }
+    .switch a[aria-current="page"] { background: #fff; color: var(--ink); }
+    .hero { min-height: 100vh; display: grid; grid-template-columns: 1.1fr .9fr; }
+    .hero-copy { display: flex; flex-direction: column; justify-content: space-between; padding: 28px 40px 48px; border-right: 1px solid var(--ink); }
+    .top { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .logo { font-weight: 700; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; }
+    .links { display: flex; gap: 4px; flex-wrap: wrap; }
+    .links a { text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; padding: 0 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .kicker { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); }
+    h1 { margin: 12px 0 0; font-size: clamp(44px, 5vw, 72px); line-height: .95; letter-spacing: -.04em; }
+    .lede { max-width: 38rem; color: var(--muted); font-size: 18px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .btn { min-height: 48px; display: inline-flex; align-items: center; padding: 0 16px; background: var(--blue); color: #fff; text-decoration: none; font-weight: 700; border: 1px solid var(--blue); cursor: pointer; font: inherit; font-weight: 700; transition: background-color .2s ease; }
+    .btn:hover { background: #006a9e; }
+    .btn.line { background: #fff; color: var(--ink); border-color: var(--ink); }
+    .btn.line:hover { background: var(--ink); color: #fff; }
+    .hero-photo { min-height: 100vh; background: #0f172a url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80") center/cover; }
+    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    section { padding: 72px 0; border-top: 1px solid var(--ink); }
+    h2 { margin: 8px 0 0; font-size: clamp(28px, 3vw, 40px); letter-spacing: -.03em; }
+    .sub { max-width: 40rem; color: var(--muted); }
+    .services { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 28px; border-top: 1px solid var(--line); }
+    .services article { padding: 20px 20px 20px 0; border-bottom: 1px solid var(--line); }
+    .services article:nth-child(3n) { padding-right: 0; }
+    .services h3 { margin: 0 0 8px; font-size: 16px; }
+    .services p { margin: 0; color: var(--muted); }
+    .num { display: block; color: var(--blue); font-size: 12px; font-weight: 700; letter-spacing: .12em; margin-bottom: 8px; }
+    .reps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); margin-top: 28px; border: 1px solid var(--line); }
+    .rep { display: block; background: #fff; text-decoration: none; cursor: pointer; }
+    .rep img { width: 100%; height: 180px; object-fit: cover; display: block; }
+    .rep span { display: block; padding: 14px 14px 18px; }
+    .rep small { color: var(--muted); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+    .rep strong { display: block; margin-top: 4px; }
+    .partners { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 24px; }
+    .partners h3 { margin: 0 0 6px; }
+    .partners p { margin: 0; color: var(--muted); }
+    .band { background: var(--ink); color: #fff; }
+    .band .kicker { color: #7dd3fc; }
+    .band .sub { color: #cbd5e1; }
+    .contact { display: grid; grid-template-columns: .8fr 1.2fr; gap: 40px; }
+    form { display: grid; gap: 10px; }
+    label { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+    input, textarea { font: inherit; padding: 12px; border: 1px solid var(--ink); background: #fff; color: var(--ink); }
+    textarea { min-height: 110px; }
+    footer { padding: 20px 0 36px; color: var(--muted); font-size: 14px; }
+    @media (max-width: 900px) {
+      .hero, .services, .reps, .partners, .contact { grid-template-columns: 1fr; }
+      .hero-photo { min-height: 42vh; }
+      .links a:not(.login) { display: none; }
+      section { padding: 48px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+  <nav class="switch" aria-label="Versiones de la landing">
+    <a href="/promovere/">Las tres</a>
+    <a href="/promovere/serif/">A · Serif</a>
+    <a href="/promovere/suiza/" aria-current="page">B · Suiza</a>
+    <a href="/promovere/editorial/">C · Editorial</a>
+  </nav>
+  <header class="hero" id="contenido">
+    <div class="hero-copy">
+      <div class="top">
+        <a class="logo" href="#contenido">Promovêre</a>
+        <nav class="links" aria-label="Secciones">
+          <a href="#servicios">Servicios</a>
+          <a href="#reps">Vê Reps</a>
+          <a href="#partners">Partners</a>
+          <a href="#contacto">Contacto</a>
+          <a class="login" href="#contacto">Iniciar sesión</a>
+        </nav>
+      </div>
+      <div>
+        <p class="kicker">Especialistas en promoción turística</p>
+        <h1>Somos Promovêre</h1>
+        <p class="lede">Ayudamos a nuestros clientes a desarrollar marcas fuertes, estrategias de marketing eficaces y una gran experiencia en los medios de comunicación para destinos, hoteles y servicios turísticos.</p>
+        <div class="actions">
+          <a class="btn" href="#servicios">Conocé nuestros servicios</a>
+          <a class="btn line" href="#contacto">Comunidad Promovêre</a>
+        </div>
+      </div>
+      <p class="kicker">Buenos Aires · Argentina y LATAM</p>
+    </div>
+    <div class="hero-photo" role="img" aria-label="Costa"></div>
+  </header>
+
+  <section id="servicios">
+    <div class="wrap">
+      <p class="kicker">Nuestros servicios</p>
+      <h2>Solución integral para tu marca turística</h2>
+      <p class="sub">Brindamos una solución integral para destinos, hoteles y proveedores de servicios que quieran posicionarse en los mercados de Argentina y Latinoamérica.</p>
+      <div class="services">
+        <article><span class="num">01</span><h3>Representaciones turísticas</h3><p>Vê REPS®: visitas comerciales, capacitación, eventos, fam tours y difusión en mercados clave.</p></article>
+        <article><span class="num">02</span><h3>Marketing turístico</h3><p>Campañas para destinos, hoteles y proveedores. Una acción puntual o una estrategia de largo plazo.</p></article>
+        <article><span class="num">03</span><h3>Relaciones públicas</h3><p>Comunicación online y offline, en medios masivos y del trade, para posicionar la marca en LATAM.</p></article>
+        <article><span class="num">04</span><h3>Capacitación</h3><p>Fuerza de ventas y departamentos de producto, presencial u online.</p></article>
+        <article><span class="num">05</span><h3>Desarrollo de producto</h3><p>Asesoramiento para que el producto se diferencie en el mercado.</p></article>
+        <article><span class="num">06</span><h3>Eventos y fam tours</h3><p>Eventos, caravanas comerciales y viajes de familiarización para agentes.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="reps">
+    <div class="wrap">
+      <p class="kicker">Vê Reps®</p>
+      <h2>Nuestras representaciones</h2>
+      <p class="sub">Conocé las marcas turísticas que representamos en Argentina y LATAM.</p>
+      <div class="reps">
+        <a class="rep" href="#contacto"><img alt="" src="https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?auto=format&fit=crop&w=800&q=70"/><span><small>Cuba</small><strong>Gaviota Hoteles</strong>Hoteles en la auténtica Cuba</span></a>
+        <a class="rep" href="#contacto"><img alt="" src="https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?auto=format&fit=crop&w=800&q=70"/><span><small>Grecia</small><strong>Hellenic Travel Network</strong>Grecia y ¡mucho más!</span></a>
+        <a class="rep" href="#contacto"><img alt="" src="https://images.unsplash.com/photo-1559599238-308793637427?auto=format&fit=crop&w=800&q=70"/><span><small>Islas Caimán</small><strong>Islas Caimán</strong>Soñá con Islas Caimán</span></a>
+        <a class="rep" href="#contacto"><img alt="" src="https://images.unsplash.com/photo-1510097467424-192d713fd8b2?auto=format&fit=crop&w=800&q=70"/><span><small>México</small><strong>Caribe Mexicano</strong>Descubrí la nueva era</span></a>
+        <a class="rep" href="#contacto"><img alt="" src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=800&q=70"/><span><small>México</small><strong>Atelier de Hoteles</strong>Descubrí Atelier de Hoteles</span></a>
+        <a class="rep" href="#contacto"><img alt="" src="https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=70"/><span><small>Estados Unidos</small><strong>Xplorer USA</strong>Explorá el estado del sol</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="partners">
+    <div class="wrap">
+      <p class="kicker">Partners</p>
+      <h2>Nuestros partners</h2>
+      <div class="partners">
+        <article><h3>Paranair</h3><p>Vuelos regionales al mejor precio. Variedad de destinos y servicio en aeropuerto para vuelos regionales.</p></article>
+        <article><h3>Enjoy Pro</h3><p>Vuelos conectando el Caribe. La plataforma para reservar vuelos y servicios en Cuba y el Caribe.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <p class="kicker">Red de distribución</p>
+      <h2>Comercializá nuestras reps</h2>
+      <p class="sub">Comercializá nuestras reps y sumate a la red de distribución más grande de turismo en LATAM.</p>
+      <div class="actions">
+        <a class="btn" href="#contacto">Quiero posicionar mi marca</a>
+        <a class="btn line" href="#contacto" style="background:transparent;color:#fff;border-color:#fff">Acceder a Comunidad Promovêre</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto">
+    <div class="wrap contact">
+      <div>
+        <p class="kicker">Contacto</p>
+        <h2>¿Querés posicionar tu marca turística en LATAM?</h2>
+        <p class="sub">¡Podemos ayudarte! Contactanos y empezá a crecer.</p>
+        <p>Av. Roque Sáenz Peña 720, piso 6, of. AB<br/>+54 9 11 4587 6932<br/>marketing@promovere.com.ar</p>
+      </div>
+      <form action="mailto:marketing@promovere.com.ar" method="post" enctype="text/plain">
+        <label for="n">Nombre completo</label><input id="n" name="nombre" required />
+        <label for="e">Email</label><input id="e" name="email" type="email" required />
+        <label for="m">Empresa / marca</label><input id="m" name="empresa" />
+        <label for="t">Tu mensaje</label><textarea id="t" name="mensaje"></textarea>
+        <button class="btn" type="submit">Enviar consulta</button>
+      </form>
+    </div>
+  </section>
+  <div class="wrap"><footer>© 2026 Promovêre. Todos los derechos reservados.</footer></div>
+</body>
+</html>
